@@ -101,6 +101,7 @@ public class SimplestDlg extends JFrame implements BaseLayer {
 		ChattingArea.setToolTipText("show you the chatting log");
 		ChattingArea.setEditable(false);
 		ChattingArea.setFont(new Font("함초롬돋움", Font.PLAIN, 13));
+		ChattingArea.setLineWrap(true);
 
 		// chatting write panel
 		chattingScrollPanel = new JScrollPane(ChattingArea, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
