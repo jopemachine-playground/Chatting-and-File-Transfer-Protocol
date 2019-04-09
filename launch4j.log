@@ -1,0 +1,62 @@
+
+
+Version:	3.12
+CmdLine:	D:\πŸ≈¡»≠∏È\Chatting Program (Data Communication)\Chatting\Chatting.exe --l4j-debug
+WOW64:		yes
+Working dir:	D:\πŸ≈¡»≠∏È\Chatting Program (Data Communication)\Chatting\.
+Java min ver:	1.008.000
+Java max ver:	
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Check launcher:	C:\Program Files\Java\jre1.8.0_201\bin\javaw.exe (OK)
+Match:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_201
+Check launcher:	C:\Program Files\Java\jre1.8.0_201\bin\javaw.exe (OK)
+Match:		1.008.000_201
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+Check:		SOFTWARE\JavaSoft\Java Development Kit\1.8
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Development Kit\1.8.0_191
+Ignore:		1.008.000_191
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\11.0.1
+Check launcher:	C:\Program Files\Java\jdk-11.0.1\bin\javaw.exe (OK)
+Match:		1.011.000_001
+Runtime used:	1.011.000_001 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-11.0.1\bin\javaw.exe
+Launcher args:	-jar "D:\πŸ≈¡»≠∏È\Chatting Program (Data Communication)\Chatting\Chatting.exe"
+Args length:	78/32768 chars
+Exit code:	0
+
+
+Version:	3.12
+CmdLine:	D:\πŸ≈¡»≠∏È\Data Communication\Chatting_Project\Simplest.exe --l4j-debug
+WOW64:		yes
+Working dir:	D:\πŸ≈¡»≠∏È\Data Communication\Chatting_Project\.
+Java min ver:	1.008.000
+Java max ver:	
+64-bit search:	SOFTWARE\JavaSoft\Java Runtime Environment...
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8
+Check launcher:	C:\Program Files\Java\jre1.8.0_201\bin\javaw.exe (OK)
+Match:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Runtime Environment\1.8.0_201
+Check launcher:	C:\Program Files\Java\jre1.8.0_201\bin\javaw.exe (OK)
+Match:		1.008.000_201
+64-bit search:	SOFTWARE\JavaSoft\Java Development Kit...
+Check:		SOFTWARE\JavaSoft\Java Development Kit\1.8
+Ignore:		1.008.000
+Check:		SOFTWARE\JavaSoft\Java Development Kit\1.8.0_191
+Ignore:		1.008.000_191
+Check:		SOFTWARE\JavaSoft\Java Development Kit\1.8.0_201
+Ignore:		1.008.000_201
+64-bit search:	SOFTWARE\JavaSoft\JRE...
+64-bit search:	SOFTWARE\JavaSoft\JDK...
+Check:		SOFTWARE\JavaSoft\JDK\11.0.1
+Check launcher:	C:\Program Files\Java\jdk-11.0.1\bin\javaw.exe (OK)
+Match:		1.011.000_001
+Runtime used:	1.011.000_001 (64-bit)
+Launcher:	C:\Program Files\Java\jdk-11.0.1\bin\javaw.exe
+Launcher args:	-jar "D:\πŸ≈¡»≠∏È\Data Communication\Chatting_Project\Simplest.exe"
+Args length:	67/32768 chars
+Exit code:	0
