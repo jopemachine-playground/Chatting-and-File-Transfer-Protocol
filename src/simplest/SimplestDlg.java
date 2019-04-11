@@ -126,7 +126,7 @@ public class SimplestDlg extends JFrame implements BaseLayer {
 		send_Button.setBounds(478, 337, 80, 20);
 		send_Button.addActionListener(new setAddressListener());
 		chattingPanel.add(send_Button);// chatting send button
-		
+
 		AddEvent();
 		setVisible(true);
 	}
@@ -144,37 +144,24 @@ public class SimplestDlg extends JFrame implements BaseLayer {
 		}
 	}
 
-	private void AddEvent(){
-		
-		mnExitButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				System.exit(0);
-			}
-		});
-		
-		message_Box.addKeyListener(new KeyAdapter() {
+	private void AddEvent() {
 
+		mnExitButton.addActionListener(e -> {
+			System.exit(0);
+		});
+
+		message_Box.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				// 10은 엔터의 리턴값
 				if (e.getKeyCode() == KeyEvent.VK_ENTER)
 					HandleSend();
 			}
-
 		});
-		
-		mnAddressSettingButton.addActionListener(new ActionListener() {
 
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				AddressSettingDlg.getInstance().setVisible(true);
-			}
-			
-		});
-		
+		mnAddressSettingButton.addActionListener(e -> AddressSettingDlg.getInstance().setVisible(true));
 	}
-	
+
 	private boolean HandleSend() {
 
 		if (AddressSettingDlg.getInstance().isSetting() == false) {
