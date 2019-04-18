@@ -42,15 +42,32 @@ public class ChatAppLayer implements BaseLayer {
 
 	byte[] intToByte2(int value) {
 
-		if (value > (2 << 16)) {
+		// int는 4바이트 이기 때문에, 2바이트로 int를 모두 나타낼 수는 없음. 2^16 = 65536 까지만 표현 가능
+		// (그리고 type이 1 바이트 밖에 안 되기 때문에 보낼 수 있는 최대 바이트 길이는 255 *
+		// MESSAGE_FRAGMENTATION_CRITERIA 바이트 둘 중 작은 값으로 제한됨)
+		if (value > (1 << 16)) {
 			System.err.append("Error - Too Big Message Length");
 		}
 
 		byte[] temp = new byte[2];
-		temp[1] = (byte) (value >> 8);
-		temp[0] = (byte) value;
+
+		temp[1] = (byte) ((value & 0x0000FF00) >> 8);
+		temp[0] = (byte) ((value & 0x000000FF));
 
 		return temp;
+	}
+
+	int byte2ToInt(byte little_byte, byte big_byte) {
+
+		int little_int = (int) little_byte;
+		int big_int = (int) big_byte;
+
+		if (little_int < 0) {
+			little_int += 256;
+		}
+
+		return (little_int + (big_int << 8));
+
 	}
 
 	public byte[] ObjToByte(_CHAT_APP Header, byte[] input, int length) {
@@ -102,15 +119,14 @@ public class ChatAppLayer implements BaseLayer {
 					for (int j = 0; j < (message_length % MESSAGE_FRAGMENTATION_CRITERIA); j++) {
 						split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
 					}
-					
-					System.out.print(new String(split_data));
-					
+
+					// System.out.print(new String(split_data));
+
 					// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
 					header[i] = new _CHAT_APP(message_length, (byte) (i + 1), split_data);
-					
+
 					split_data = ObjToByte(header[i], split_data, message_length % MESSAGE_FRAGMENTATION_CRITERIA);
-				
-					
+
 					if (p_UnderLayer.Send(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4) == false) {
 						return false;
 					}
@@ -125,8 +141,8 @@ public class ChatAppLayer implements BaseLayer {
 
 					// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
 					header[i] = new _CHAT_APP(message_length, (byte) (i + 1), split_data);
-					
-					System.out.print(new String(split_data));
+
+					// System.out.print(new String(split_data));
 
 					split_data = ObjToByte(header[i], split_data, MESSAGE_FRAGMENTATION_CRITERIA);
 
@@ -157,6 +173,10 @@ public class ChatAppLayer implements BaseLayer {
 			System.err.append("Error - Wrong Message Input");
 			return false;
 		}
+		
+		byte little_length = input[0];
+		byte big_length = input[1];
+		int type = input[2];
 
 		byte[] data = RemoveCappHeader(input, input.length);
 
@@ -169,11 +189,11 @@ public class ChatAppLayer implements BaseLayer {
 		// 단편화가 되어 있는 경우
 		else {
 
-			int message_length = (input[0] | (input[1] << 8));
-			System.out.println("message length : " + message_length);
-			
+			int message_length = byte2ToInt(little_length, big_length);
+
 			// 마지막 조각 (버퍼를 올림)
-			if (input[2] == (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1) {
+			if ((type > 0 && (type == (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1))
+					|| (type < 0 && (type + 256 == (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1))) {
 
 				byte[] buf = new byte[message_buffer.length + (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 1];
 
@@ -193,8 +213,9 @@ public class ChatAppLayer implements BaseLayer {
 
 				return true;
 			}
+			
 			// 버퍼에 저장
-			else if (input[2] < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1) {
+			else {
 
 				byte[] buf = new byte[message_buffer.length + MESSAGE_FRAGMENTATION_CRITERIA];
 
@@ -211,7 +232,6 @@ public class ChatAppLayer implements BaseLayer {
 				return true;
 			}
 		}
-		return false;
 	}
 
 	@Override
