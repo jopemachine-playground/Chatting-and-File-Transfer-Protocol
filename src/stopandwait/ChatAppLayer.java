@@ -79,6 +79,15 @@ public class ChatAppLayer implements BaseLayer {
 		if (message_length < MESSAGE_FRAGMENTATION_CRITERIA) {
 			// 단편화 하지 않음
 			header[0] = new _CHAT_APP(message_length, (byte) 0x00, input);
+
+			byte[] data = ObjToByte(header[0], input, message_length);
+
+			if (p_UnderLayer.Send(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4) == false) {
+				return false;
+			}
+			
+			return true;
+			
 		} else {
 			// 단편화 후 반복 Send
 			for (int i = 0; i < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1; i++) {
