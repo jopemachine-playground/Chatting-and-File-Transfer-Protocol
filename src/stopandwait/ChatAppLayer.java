@@ -12,9 +12,9 @@ public class ChatAppLayer implements BaseLayer {
 	// 실제론 1456을 사용
 	private static final int MESSAGE_FRAGMENTATION_CRITERIA = 10;
 	private static final byte[] BUFFER_INITIALIZER = new byte[0];
-	
+
 	private byte[] message_buffer = new byte[0];
-	
+
 	private class _CHAT_APP {
 		byte[] capp_totlen;
 		byte capp_type;
@@ -30,6 +30,8 @@ public class ChatAppLayer implements BaseLayer {
 
 			// type : 몇 번 째 단편화 조각인가?
 			this.capp_type = nth_frame;
+
+			// data가 메시지라면 위 레이어로 byte[]이 아니라 _CHAT_APP 객체를 보내야함? 왜 이렇게 함?
 			this.capp_data = message_data;
 		}
 	}
@@ -85,9 +87,9 @@ public class ChatAppLayer implements BaseLayer {
 			if (p_UnderLayer.Send(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4) == false) {
 				return false;
 			}
-			
+
 			return true;
-			
+
 		} else {
 			// 단편화 후 반복 Send
 			for (int i = 0; i < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1; i++) {
@@ -95,17 +97,20 @@ public class ChatAppLayer implements BaseLayer {
 				byte[] split_data = null;
 				// 마지막 조각 처리
 				if (i == message_length / MESSAGE_FRAGMENTATION_CRITERIA) {
-					split_data = new byte[message_length % MESSAGE_FRAGMENTATION_CRITERIA];
+					split_data = new byte[message_length % MESSAGE_FRAGMENTATION_CRITERIA + 1];
 
-					for (int j = i; j < message_length % MESSAGE_FRAGMENTATION_CRITERIA; j++) {
+					for (int j = 0; j < (message_length % MESSAGE_FRAGMENTATION_CRITERIA); j++) {
 						split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
 					}
-
+					
+					System.out.print(new String(split_data));
+					
 					// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
 					header[i] = new _CHAT_APP(message_length, (byte) (i + 1), split_data);
-
+					
 					split_data = ObjToByte(header[i], split_data, message_length % MESSAGE_FRAGMENTATION_CRITERIA);
-
+				
+					
 					if (p_UnderLayer.Send(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4) == false) {
 						return false;
 					}
@@ -114,12 +119,14 @@ public class ChatAppLayer implements BaseLayer {
 				else {
 					split_data = new byte[MESSAGE_FRAGMENTATION_CRITERIA];
 
-					for (int j = i; j < MESSAGE_FRAGMENTATION_CRITERIA; j++) {
+					for (int j = 0; j < MESSAGE_FRAGMENTATION_CRITERIA; j++) {
 						split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
 					}
 
 					// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
 					header[i] = new _CHAT_APP(message_length, (byte) (i + 1), split_data);
+					
+					System.out.print(new String(split_data));
 
 					split_data = ObjToByte(header[i], split_data, MESSAGE_FRAGMENTATION_CRITERIA);
 
@@ -152,52 +159,55 @@ public class ChatAppLayer implements BaseLayer {
 		}
 
 		byte[] data = RemoveCappHeader(input, input.length);
-		
+
 		// 단편화가 되어 있지 않은 경우
 		if (input[2] == 0) {
 			this.GetUpperLayer(0).Receive(data);
 			return true;
 		}
-		
 
 		// 단편화가 되어 있는 경우
 		else {
-			
+
 			int message_length = (input[0] | (input[1] << 8));
+			System.out.println("message length : " + message_length);
 			
 			// 마지막 조각 (버퍼를 올림)
 			if (input[2] == (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1) {
-				
-				byte[] buf = new byte[message_buffer.length + (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1];
-				
-				for(int i = 0; i < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1; i++) {
-					
+
+				byte[] buf = new byte[message_buffer.length + (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 1];
+
+				for (int i = 0; i < message_buffer.length; i++) {
 					buf[i] = message_buffer[i];
+				}
+
+				for (int i = 0; i < (message_length % MESSAGE_FRAGMENTATION_CRITERIA); i++) {
 					buf[i + message_buffer.length] = data[i];
 				}
-				
+
 				message_buffer = buf;
-				
+
 				this.GetUpperLayer(0).Receive(message_buffer);
-				
+
 				message_buffer = BUFFER_INITIALIZER;
-				
+
 				return true;
 			}
 			// 버퍼에 저장
-			else if(input[2] < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1){
-				
+			else if (input[2] < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1) {
+
 				byte[] buf = new byte[message_buffer.length + MESSAGE_FRAGMENTATION_CRITERIA];
-				
-				for(int i = 0; i < MESSAGE_FRAGMENTATION_CRITERIA; i++) {
-					
+
+				for (int i = 0; i < message_buffer.length; i++) {
 					buf[i] = message_buffer[i];
-					buf[i + message_buffer.length] = data[i];
-				
 				}
-				
+
+				for (int i = 0; i < MESSAGE_FRAGMENTATION_CRITERIA; i++) {
+					buf[i + message_buffer.length] = data[i];
+				}
+
 				message_buffer = buf;
-				
+
 				return true;
 			}
 		}
