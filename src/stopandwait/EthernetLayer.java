@@ -156,22 +156,10 @@ public class EthernetLayer implements BaseLayer {
 		if (result == false) {
 			return false;
 		}
-
-		// type이 0x02, 0x00인 경우 Ack 신호이므로 무시하고, 대신 위 레이어에 Send 해도 된다는 신호를 보낸다.
-		if ((input[12] == 0x02) && (input[13] == 0x00)) {
-			
-			LayerManager lm = LayerManager.getInstance();
-			((ChatAppLayer) lm.GetLayer("ChatApp")).SendThreadNotify();
-			return false;
-		}
 		
 		input = RemoveAddessHeader(input, input.length);
 		
 		GetUpperLayer(0).Receive(input);
-		
-		// Data 패킷을 제대로 처리했으므로, Ack 신호를 보낸다
-
-		p_UnderLayer.Send(Addressing(new byte[0], 0, 2), 14);
 		
 		return true;
 	}

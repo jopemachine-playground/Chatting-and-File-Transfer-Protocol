@@ -135,7 +135,7 @@ public class NILayer implements BaseLayer {
 		}
 
 		@Override
-		public void run() {
+		public synchronized void run() {
 			while (true) {
 				// 익명 클래스를 이용해 PcapHandler 인터페이스의 구현 방식을 명시.
 				PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
