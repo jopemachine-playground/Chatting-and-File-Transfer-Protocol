@@ -97,7 +97,7 @@ public class ChatAppLayer implements BaseLayer {
 				if (i == message_length / MESSAGE_FRAGMENTATION_CRITERIA) {
 					split_data = new byte[message_length % MESSAGE_FRAGMENTATION_CRITERIA];
 
-					for (int j = i; j < i + message_length % MESSAGE_FRAGMENTATION_CRITERIA; j++) {
+					for (int j = i; j < message_length % MESSAGE_FRAGMENTATION_CRITERIA; j++) {
 						split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
 					}
 
@@ -114,7 +114,7 @@ public class ChatAppLayer implements BaseLayer {
 				else {
 					split_data = new byte[MESSAGE_FRAGMENTATION_CRITERIA];
 
-					for (int j = i; j < i + MESSAGE_FRAGMENTATION_CRITERIA; j++) {
+					for (int j = i; j < MESSAGE_FRAGMENTATION_CRITERIA; j++) {
 						split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
 					}
 
@@ -172,9 +172,11 @@ public class ChatAppLayer implements BaseLayer {
 				
 				for(int i = 0; i < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1; i++) {
 					
-					buf[i + (message_length % MESSAGE_FRAGMENTATION_CRITERIA)] = buf[i];
-					buf[i] = data[i];
+					buf[i] = message_buffer[i];
+					buf[i + message_buffer.length] = data[i];
 				}
+				
+				message_buffer = buf;
 				
 				this.GetUpperLayer(0).Receive(message_buffer);
 				
@@ -189,10 +191,13 @@ public class ChatAppLayer implements BaseLayer {
 				
 				for(int i = 0; i < MESSAGE_FRAGMENTATION_CRITERIA; i++) {
 					
-					buf[i + MESSAGE_FRAGMENTATION_CRITERIA] = buf[i];
-					buf[i] = data[i];
+					buf[i] = message_buffer[i];
+					buf[i + message_buffer.length] = data[i];
 				
 				}
+				
+				message_buffer = buf;
+				
 				return true;
 			}
 		}
