@@ -24,15 +24,13 @@ public class EthernetLayer implements BaseLayer {
 		_ETHERNET_ADDR enet_dstaddr;
 		_ETHERNET_ADDR enet_srcaddr;
 		byte[] enet_type;
-		// type으로 Ack인 지, Data인지 나타냄
+		// type으로 Ack인 지, Data인지 나타냄. type이 01이라면 데이터를, 02라면 Ack 신호를 나타냄
 		byte[] enet_data;
 
 		public _ETHERNET_Frame() {
 			this.enet_dstaddr = new _ETHERNET_ADDR();
 			this.enet_srcaddr = new _ETHERNET_ADDR();
 			this.enet_type = new byte[2];
-			this.enet_type[0] = 0x03;
-			this.enet_type[1] = 0x00;
 			this.enet_data = null;
 		}
 	}
@@ -87,7 +85,7 @@ public class EthernetLayer implements BaseLayer {
 
 	public boolean Send(byte[] input, int length) {
 
-		byte[] temp = Addressing(input, length);
+		byte[] temp = Addressing(input, length, 1);
 
 		if(p_UnderLayer.Send(temp, length + 14) == false) {
 			return false;
@@ -96,7 +94,7 @@ public class EthernetLayer implements BaseLayer {
 		return true;
 	}
 
-	public byte[] Addressing(byte[] input, int length) {
+	public byte[] Addressing(byte[] input, int length, int type) {
 		byte[] buf = new byte[length + 14];
 
 		buf[0] = m_Ethernet_Header.enet_dstaddr.addr[0];
@@ -113,7 +111,7 @@ public class EthernetLayer implements BaseLayer {
 		buf[10] = m_Ethernet_Header.enet_srcaddr.addr[4];
 		buf[11] = m_Ethernet_Header.enet_srcaddr.addr[5];
 
-		buf[12] = m_Ethernet_Header.enet_type[0];
+		buf[12] = (byte) type;
 		buf[13] = m_Ethernet_Header.enet_type[1];
 
 		for (int i = 0; i < length; i++)
@@ -128,8 +126,9 @@ public class EthernetLayer implements BaseLayer {
 
 		int ffCount = 0;
 		int fitCount = 0;
-
-		if (!((input[12] == m_Ethernet_Header.enet_type[0]) && (input[13] == m_Ethernet_Header.enet_type[1]))) {
+	
+		// type이 0x01, 0x00인 경우 Data 신호이다. 그 외엔 모두 더미 패킷으로 처리한다
+		if (!(((input[12] == 0x01) && (input[13] == 0x00)) || (input[12] == 0x02) && (input[13] == 0x00))) {
 			return false;
 		}
 
@@ -158,10 +157,22 @@ public class EthernetLayer implements BaseLayer {
 			return false;
 		}
 
+		// type이 0x02, 0x00인 경우 Ack 신호이므로 무시하고, 대신 위 레이어에 Send 해도 된다는 신호를 보낸다.
+		if ((input[12] == 0x02) && (input[13] == 0x00)) {
+			
+			LayerManager lm = LayerManager.getInstance();
+			((ChatAppLayer) lm.GetLayer("ChatApp")).SendThreadNotify();
+			return false;
+		}
+		
 		input = RemoveAddessHeader(input, input.length);
-
+		
 		GetUpperLayer(0).Receive(input);
+		
+		// Data 패킷을 제대로 처리했으므로, Ack 신호를 보낸다
 
+		p_UnderLayer.Send(Addressing(new byte[0], 0, 2), 14);
+		
 		return true;
 	}
 

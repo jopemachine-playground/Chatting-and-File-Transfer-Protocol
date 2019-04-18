@@ -1,7 +1,8 @@
 package stopandwait;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class ChatAppLayer implements BaseLayer {
 	public int nUpperLayerCount = 0;
@@ -15,6 +16,8 @@ public class ChatAppLayer implements BaseLayer {
 
 	private byte[] message_buffer = new byte[0];
 
+	private Queue<Send_Thread> sendingThreadQueue = new LinkedList<>();
+	
 	private class _CHAT_APP {
 		byte[] capp_totlen;
 		byte capp_type;
@@ -38,6 +41,10 @@ public class ChatAppLayer implements BaseLayer {
 
 	public ChatAppLayer(String pName) {
 		pLayerName = pName;
+	}
+	
+	public void SendThreadNotify() {
+		sendingThreadQueue.poll().notify();
 	}
 
 	byte[] intToByte2(int value) {
@@ -85,74 +92,17 @@ public class ChatAppLayer implements BaseLayer {
 	}
 
 	public boolean Send(byte[] input, int message_length) {
-
-		_CHAT_APP header[] = new _CHAT_APP[(message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1];
-
-		// 255 보다 큰 값을 byte에 담을 수 없으므로, message_length는 255 *
-		// MESSAGE_FRAGMENTATION_CRITERIA 보다 작아야한다. (그래야 단편화가 가능하므로)
-		if (message_length < 0 || message_length > 255 * MESSAGE_FRAGMENTATION_CRITERIA) {
-			System.err.append("Error - Wrong Message Length");
-			return false;
-		}
-
-		if (message_length < MESSAGE_FRAGMENTATION_CRITERIA) {
-			// 단편화 하지 않음
-			header[0] = new _CHAT_APP(message_length, (byte) 0x00, input);
-
-			byte[] data = ObjToByte(header[0], input, message_length);
-
-			if (p_UnderLayer.Send(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4) == false) {
-				return false;
-			}
-
-			return true;
-
-		} else {
-			// 단편화 후 반복 Send
-			for (int i = 0; i < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1; i++) {
-
-				byte[] split_data = null;
-				// 마지막 조각 처리
-				if (i == message_length / MESSAGE_FRAGMENTATION_CRITERIA) {
-					split_data = new byte[message_length % MESSAGE_FRAGMENTATION_CRITERIA + 1];
-
-					for (int j = 0; j < (message_length % MESSAGE_FRAGMENTATION_CRITERIA); j++) {
-						split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
-					}
-
-					// System.out.print(new String(split_data));
-
-					// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
-					header[i] = new _CHAT_APP(message_length, (byte) (i + 1), split_data);
-
-					split_data = ObjToByte(header[i], split_data, message_length % MESSAGE_FRAGMENTATION_CRITERIA);
-
-					if (p_UnderLayer.Send(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4) == false) {
-						return false;
-					}
-				}
-				// 10 바이트 조각 처리
-				else {
-					split_data = new byte[MESSAGE_FRAGMENTATION_CRITERIA];
-
-					for (int j = 0; j < MESSAGE_FRAGMENTATION_CRITERIA; j++) {
-						split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
-					}
-
-					// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
-					header[i] = new _CHAT_APP(message_length, (byte) (i + 1), split_data);
-
-					// System.out.print(new String(split_data));
-
-					split_data = ObjToByte(header[i], split_data, MESSAGE_FRAGMENTATION_CRITERIA);
-
-					if (p_UnderLayer.Send(split_data, MESSAGE_FRAGMENTATION_CRITERIA + 4) == false) {
-						return false;
-					}
-				}
-
-			}
-		}
+		
+		Send_Thread send = new Send_Thread(input, message_length);
+		
+		sendingThreadQueue.add(send);
+		
+		
+		
+		Thread sendingThreads = new Thread(send);
+		
+		sendingThreads.start();
+		
 		return true;
 	}
 
@@ -275,6 +225,94 @@ public class ChatAppLayer implements BaseLayer {
 	public void SetUpperUnderLayer(BaseLayer pUULayer) {
 		this.SetUpperLayer(pUULayer);
 		pUULayer.SetUnderLayer(this);
+	}
+	
+	class Send_Thread implements Runnable {
+		
+		byte[] input;
+		int message_length;
+		
+		public Send_Thread(byte[] data, int length) {
+			this.input = data;
+			this.message_length = length;
+		}
+
+		@Override
+		public synchronized void run() {
+			
+			_CHAT_APP header[] = new _CHAT_APP[(message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1];
+
+			// 255 보다 큰 값을 byte에 담을 수 없으므로, message_length는 255 *
+			// MESSAGE_FRAGMENTATION_CRITERIA 보다 작아야한다. (그래야 단편화가 가능하므로)
+			if (message_length < 0 || message_length > 255 * MESSAGE_FRAGMENTATION_CRITERIA) {
+				System.err.append("Error - Wrong Message Length");
+			}
+
+			if (message_length < MESSAGE_FRAGMENTATION_CRITERIA) {
+				// 단편화 하지 않음
+				header[0] = new _CHAT_APP(message_length, (byte) 0x00, input);
+
+				byte[] data = ObjToByte(header[0], input, message_length);
+
+				p_UnderLayer.Send(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4);
+
+			} else {
+				// 단편화 후 반복 Send
+				for (int i = 0; i < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1; i++) {
+
+					byte[] split_data = null;
+					// 마지막 조각 처리
+					if (i == message_length / MESSAGE_FRAGMENTATION_CRITERIA) {
+						split_data = new byte[message_length % MESSAGE_FRAGMENTATION_CRITERIA + 1];
+
+						for (int j = 0; j < (message_length % MESSAGE_FRAGMENTATION_CRITERIA); j++) {
+							split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
+						}
+
+						// System.out.print(new String(split_data));
+
+						// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
+						header[i] = new _CHAT_APP(message_length, (byte) (i + 1), split_data);
+
+						split_data = ObjToByte(header[i], split_data, message_length % MESSAGE_FRAGMENTATION_CRITERIA);
+
+						p_UnderLayer.Send(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4);
+						
+						// 마지막 조각까지 Send 했으니 이 스레드를 종료한다
+						Thread.currentThread().interrupt();
+						
+					}
+					// 10 바이트 조각 처리
+					else {
+						split_data = new byte[MESSAGE_FRAGMENTATION_CRITERIA];
+
+						for (int j = 0; j < MESSAGE_FRAGMENTATION_CRITERIA; j++) {
+							split_data[j] = input[MESSAGE_FRAGMENTATION_CRITERIA * i + j];
+						}
+
+						// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
+						header[i] = new _CHAT_APP(message_length, (byte) (i + 1), split_data);
+
+						// System.out.print(new String(split_data));
+
+						split_data = ObjToByte(header[i], split_data, MESSAGE_FRAGMENTATION_CRITERIA);
+
+						p_UnderLayer.Send(split_data, MESSAGE_FRAGMENTATION_CRITERIA + 4);
+						
+						try {
+							// 한 프레임을 보내고, Ack 신호가 올 때 까지 대기한다.
+							Thread.currentThread().wait();
+							
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+						
+					}
+
+				}
+			}
+
+		}
 	}
 
 }

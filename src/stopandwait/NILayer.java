@@ -141,18 +141,13 @@ public class NILayer implements BaseLayer {
 				PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
 					@Override
 					public void nextPacket(PcapPacket packet, String user) {
-							
 						data = packet.getByteArray(0, packet.size());
-
 						UpperLayer.Receive(data);
-
 					}
 				};
-
 				AdapterObject.loop(100000, jpacketHandler, "");
 			}
 		}
-
 	}
 
 	public boolean Send(byte[] input, int length) {
