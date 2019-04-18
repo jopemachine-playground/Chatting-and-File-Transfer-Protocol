@@ -24,6 +24,7 @@ public class EthernetLayer implements BaseLayer {
 		_ETHERNET_ADDR enet_dstaddr;
 		_ETHERNET_ADDR enet_srcaddr;
 		byte[] enet_type;
+		// type으로 Ack인 지, Data인지 나타냄
 		byte[] enet_data;
 
 		public _ETHERNET_Frame() {
