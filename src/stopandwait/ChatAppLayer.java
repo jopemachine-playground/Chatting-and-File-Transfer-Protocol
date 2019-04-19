@@ -44,7 +44,7 @@ public class ChatAppLayer implements BaseLayer {
 		pLayerName = pName;
 	}
 
-	// Ack가 분실되어도, 처리할 수 있도록 type으로 몇 번째 프레인인지 값을 전달 
+	// Ack가 분실되어도, 처리할 수 있도록 type으로 몇 번째 프레인인지 값을 전달
 	public void SendThreadNotify(byte type) {
 		sendingThread.notified_nth_frame = type;
 		synchronized (sendingThread) {
@@ -105,9 +105,9 @@ public class ChatAppLayer implements BaseLayer {
 			thread = new Thread(sendingThread);
 			thread.start();
 		}
-		
+
 		sendingThread.messageQueue.add(input);
-		
+
 		synchronized (sendingThread.send_lock) {
 			sendingThread.send_lock.notify();
 		}
@@ -126,19 +126,19 @@ public class ChatAppLayer implements BaseLayer {
 		return temp;
 	}
 
-	public synchronized boolean Receive(byte[] input) {
+	public boolean Receive(byte[] input) {
 
 		if (input == null) {
 			System.err.append("Error - Wrong Message Input");
 			return false;
 		}
 
-		if(input[3] == 1) {
-			System.out.println("input[3] == 1");
+		if (input[3] == 1) {
+			System.out.println("Ack 도착");
 			SendThreadNotify(input[2]);
 			return false;
 		}
-		
+
 		byte little_length = input[0];
 		byte big_length = input[1];
 		int type = input[2];
@@ -195,15 +195,15 @@ public class ChatAppLayer implements BaseLayer {
 				}
 
 				message_buffer = buf;
-				
+
 				return true;
 			}
 		}
-		
+
 	}
-	
+
 	public void Send_Ack(byte type) {
-		
+
 		_CHAT_APP ack = new _CHAT_APP(0, type, null, (byte) 1);
 
 		p_UnderLayer.Send(ObjToByte(ack, new byte[0], 0), 4);
@@ -258,7 +258,7 @@ public class ChatAppLayer implements BaseLayer {
 		Object send_lock = new Object();
 
 		byte notified_nth_frame;
-		
+
 		private void Wait_Ack() {
 			try {
 				// 한 프레임을 보내고, Ack 신호가 올 때 까지 대기한다.
@@ -270,7 +270,7 @@ public class ChatAppLayer implements BaseLayer {
 				e.printStackTrace();
 			}
 		}
-		
+
 		private void Wait_Send() {
 			try {
 				// 메시지큐가 비어 있으면 송신할 메시지가 입력될 때 까지 기다린다.
@@ -288,11 +288,11 @@ public class ChatAppLayer implements BaseLayer {
 
 			// 전송이 끝난 후 while 루프로 인해, 돌아와 큐에서 새 메시지를 꺼냄, 메시지가 없을 경우 Wait.
 			while (true) {
-				
+
 				if (messageQueue.isEmpty()) {
 					Wait_Send();
 				}
-				
+
 				byte[] input = messageQueue.poll();
 
 				int message_length = input.length;
@@ -335,7 +335,8 @@ public class ChatAppLayer implements BaseLayer {
 									message_length % MESSAGE_FRAGMENTATION_CRITERIA);
 
 							p_UnderLayer.Send(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4);
-
+							
+							Wait_Ack();
 						}
 						// 10 바이트 조각 처리
 						else {
@@ -353,13 +354,15 @@ public class ChatAppLayer implements BaseLayer {
 							split_data = ObjToByte(header[i], split_data, MESSAGE_FRAGMENTATION_CRITERIA);
 
 							p_UnderLayer.Send(split_data, MESSAGE_FRAGMENTATION_CRITERIA + 4);
-							
+
 							// notify로 들어온 값과 이번에 Send한 frame이 같은 n번째 라면 Ack를 기다리고, 아니라면 반복문을 더 돈다
-							if (i + 1 == notified_nth_frame) {
-								System.out.println("nth_frame: " + i + 1);
-								System.out.println("notified_nth_frame" + notified_nth_frame);
-								Wait_Ack();
-							}
+							
+							Wait_Ack();
+//							if (i + 1 == notified_nth_frame) {
+//								System.out.println("nth_frame: " + i + 1);
+//								System.out.println("notified_nth_frame" + notified_nth_frame);
+//								Wait_Ack();
+//							}
 
 						}
 
