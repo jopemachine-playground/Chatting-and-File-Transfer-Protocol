@@ -284,7 +284,7 @@ public class ChatAppLayer implements BaseLayer {
 		}
 
 		@Override
-		public synchronized void run() {
+		public void run() {
 
 			// 전송이 끝난 후 while 루프로 인해, 돌아와 큐에서 새 메시지를 꺼냄, 메시지가 없을 경우 Wait.
 			while (true) {
@@ -312,7 +312,9 @@ public class ChatAppLayer implements BaseLayer {
 					byte[] data = ObjToByte(header[0], input, message_length);
 
 					p_UnderLayer.Send(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4);
-
+					
+					Wait_Ack();
+					
 				} else {
 					// 단편화 후 반복 Send
 					for (int i = 0; i < (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1; i++) {
@@ -358,11 +360,6 @@ public class ChatAppLayer implements BaseLayer {
 							// notify로 들어온 값과 이번에 Send한 frame이 같은 n번째 라면 Ack를 기다리고, 아니라면 반복문을 더 돈다
 							
 							Wait_Ack();
-//							if (i + 1 == notified_nth_frame) {
-//								System.out.println("nth_frame: " + i + 1);
-//								System.out.println("notified_nth_frame" + notified_nth_frame);
-//								Wait_Ack();
-//							}
 
 						}
 
