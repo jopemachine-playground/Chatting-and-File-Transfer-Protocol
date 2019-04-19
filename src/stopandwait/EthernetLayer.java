@@ -85,7 +85,7 @@ public class EthernetLayer implements BaseLayer {
 
 	public boolean Send(byte[] input, int length) {
 
-		byte[] temp = Addressing(input, length, 1);
+		byte[] temp = Addressing(input, length, 0);
 
 		if(p_UnderLayer.Send(temp, length + 14) == false) {
 			return false;
@@ -128,7 +128,7 @@ public class EthernetLayer implements BaseLayer {
 		int fitCount = 0;
 	
 		// type이 0x01, 0x00인 경우 Data 신호이다. 그 외엔 모두 더미 패킷으로 처리한다
-		if (!(((input[12] == 0x01) && (input[13] == 0x00)) || (input[12] == 0x02) && (input[13] == 0x00))) {
+		if (!(((input[12] == 0x00) && (input[13] == 0x00)) || (input[12] == 0x01) && (input[13] == 0x00))) {
 			return false;
 		}
 
@@ -156,10 +156,20 @@ public class EthernetLayer implements BaseLayer {
 		if (result == false) {
 			return false;
 		}
+	
+		// input[12], 즉 isAck가 1인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를 깨움
+		if (input[12] == 1) {
+			System.out.println("Ack 도착");
+			LayerManager lm = LayerManager.getInstance();
+			((ChatAppLayer) lm.GetLayer("ChatApp")).SendThreadNotify();
+			return false;
+		}
 		
 		input = RemoveAddessHeader(input, input.length);
 		
 		GetUpperLayer(0).Receive(input);
+		
+		p_UnderLayer.Send(Addressing(new byte[0], 0, 1), 14);
 		
 		return true;
 	}

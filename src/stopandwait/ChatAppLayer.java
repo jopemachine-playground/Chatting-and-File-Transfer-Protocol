@@ -45,8 +45,7 @@ public class ChatAppLayer implements BaseLayer {
 	}
 
 	// Ack가 분실되어도, 처리할 수 있도록 type으로 몇 번째 프레인인지 값을 전달
-	public void SendThreadNotify(byte type) {
-		sendingThread.notified_nth_frame = type;
+	public void SendThreadNotify() {
 		synchronized (sendingThread) {
 			sendingThread.notify();
 		}
@@ -98,11 +97,9 @@ public class ChatAppLayer implements BaseLayer {
 
 	public boolean Send(byte[] input, int message_length) {
 
-		Thread thread = null;
-
 		if (sendingThread == null) {
 			sendingThread = new Send_Thread();
-			thread = new Thread(sendingThread);
+			Thread thread = new Thread(sendingThread);
 			thread.start();
 		}
 
@@ -113,6 +110,13 @@ public class ChatAppLayer implements BaseLayer {
 		}
 
 		return true;
+	}
+	
+	public void Send_Ack(byte type) {
+
+		// _CHAT_APP ack = new _CHAT_APP(0, type, null, (byte) 1);
+
+		p_UnderLayer.Send(ObjToByte(new _CHAT_APP(0, type, null, (byte) 1), new byte[0], 0), 4);
 	}
 
 	public byte[] RemoveCappHeader(byte[] input, int length) {
@@ -132,12 +136,13 @@ public class ChatAppLayer implements BaseLayer {
 			System.err.append("Error - Wrong Message Input");
 			return false;
 		}
-
-		if (input[3] == 1) {
-			System.out.println("Ack 도착");
-			SendThreadNotify(input[2]);
-			return false;
-		}
+		
+		// input[3], 즉 isAck가 1인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를 깨움
+//		if (input[3] == 1) {
+//			System.out.println("Ack 도착");
+//			SendThreadNotify(input[2]);
+//			return false;
+//		}
 
 		byte little_length = input[0];
 		byte big_length = input[1];
@@ -145,15 +150,15 @@ public class ChatAppLayer implements BaseLayer {
 
 		byte[] data = RemoveCappHeader(input, input.length);
 
-		Send_Ack(input[2]);
+		// Send_Ack(input[2]);
 
-		// 단편화가 되어 있지 않은 경우
+		// 단편화가 되어 있지 않은 경우 (type이 0인 경우)
 		if (type == 0) {
 			this.GetUpperLayer(0).Receive(data);
 			return true;
 		}
 
-		// 단편화가 되어 있는 경우
+		// 단편화가 되어 있는 경우 (타입이 1 이상의 값을 갖는 경우)
 		else {
 
 			int message_length = byte2ToInt(little_length, big_length);
@@ -200,13 +205,6 @@ public class ChatAppLayer implements BaseLayer {
 			}
 		}
 
-	}
-
-	public void Send_Ack(byte type) {
-
-		_CHAT_APP ack = new _CHAT_APP(0, type, null, (byte) 1);
-
-		p_UnderLayer.Send(ObjToByte(ack, new byte[0], 0), 4);
 	}
 
 	@Override
@@ -256,8 +254,6 @@ public class ChatAppLayer implements BaseLayer {
 
 		Queue<byte[]> messageQueue = new LinkedList<>();
 		Object send_lock = new Object();
-
-		byte notified_nth_frame;
 
 		private void Wait_Ack() {
 			try {
