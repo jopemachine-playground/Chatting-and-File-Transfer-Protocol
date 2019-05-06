@@ -3,6 +3,8 @@ package stopandwait;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+import UnitTest.DebuggingHelper;
+
 public class EthernetLayer implements BaseLayer {
 
 	private class _ETHERNET_Frame {
@@ -84,10 +86,10 @@ public class EthernetLayer implements BaseLayer {
 	}
 
 	public boolean Send(byte[] input, int length) {
-
+		
 		byte[] temp = Addressing(input, length, 0);
-
-		if(p_UnderLayer.Send(temp, length + 14) == false) {
+		
+		if (p_UnderLayer.Send(temp, length + 14) == false) {
 			return false;
 		}
 
@@ -121,16 +123,46 @@ public class EthernetLayer implements BaseLayer {
 	}
 
 	public synchronized boolean Receive(byte[] input) {
+		
+		if ((isRightPacket(input) == false) || isRightAddress(input) == false) {
+			return false;
+		}
 
-		boolean result = false;
+		if (isAckSignal(input)) {
+			LayerManager lm = LayerManager.getInstance();
+			((ChatAppLayer) lm.GetLayer("ChatApp")).SendThreadNotify();
+			return false;
+		}
 
-		int ffCount = 0;
-		int fitCount = 0;
-	
+		input = RemoveAddessHeader(input, input.length);
+
+		GetUpperLayer(0).Receive(input);
+
+		p_UnderLayer.Send(Addressing(new byte[0], 0, 1), 14);
+
+		return true;
+	}
+
+	private boolean isAckSignal(byte[] input) {
+		// input[12], 즉 isAck가 1인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를 깨움
+		if (input[12] == 1) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean isRightPacket(byte[] input) {
 		// type이 0x01, 0x00인 경우 Data 신호이다. 그 외엔 모두 더미 패킷으로 처리한다
 		if (!(((input[12] == 0x00) && (input[13] == 0x00)) || (input[12] == 0x01) && (input[13] == 0x00))) {
 			return false;
 		}
+		return true;
+	}
+
+	private boolean isRightAddress(byte[] input) {
+
+		int ffCount = 0;
+		int fitCount = 0;
 
 		for (int i = 0; i < 6; i++) {
 
@@ -150,28 +182,9 @@ public class EthernetLayer implements BaseLayer {
 		}
 
 		if (ffCount == 6 || fitCount == 6) {
-			result = true;
+			return true;
 		}
-
-		if (result == false) {
-			return false;
-		}
-	
-		// input[12], 즉 isAck가 1인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를 깨움
-		if (input[12] == 1) {
-			System.out.println("Ack 도착");
-			LayerManager lm = LayerManager.getInstance();
-			((ChatAppLayer) lm.GetLayer("ChatApp")).SendThreadNotify();
-			return false;
-		}
-		
-		input = RemoveAddessHeader(input, input.length);
-		
-		GetUpperLayer(0).Receive(input);
-		
-		p_UnderLayer.Send(Addressing(new byte[0], 0, 1), 14);
-		
-		return true;
+		return false;
 	}
 
 	public byte[] RemoveAddessHeader(byte[] input, int length) {
@@ -181,7 +194,7 @@ public class EthernetLayer implements BaseLayer {
 		for (int i = 0; i < length - 14; i++) {
 			temp[i] = input[i + 14];
 		}
-		
+
 		return temp;
 	}
 

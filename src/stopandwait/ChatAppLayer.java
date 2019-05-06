@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import UnitTest.DebuggingHelper;
+
 public class ChatAppLayer implements BaseLayer {
 	public int nUpperLayerCount = 0;
 	public String pLayerName = null;
@@ -136,21 +138,12 @@ public class ChatAppLayer implements BaseLayer {
 			System.err.append("Error - Wrong Message Input");
 			return false;
 		}
-		
-		// input[3], 즉 isAck가 1인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를 깨움
-//		if (input[3] == 1) {
-//			System.out.println("Ack 도착");
-//			SendThreadNotify(input[2]);
-//			return false;
-//		}
 
 		byte little_length = input[0];
 		byte big_length = input[1];
 		int type = input[2];
 
 		byte[] data = RemoveCappHeader(input, input.length);
-
-		// Send_Ack(input[2]);
 
 		// 단편화가 되어 있지 않은 경우 (type이 0인 경우)
 		if (type == 0) {

@@ -194,7 +194,7 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 		String showText = "";
 
 		try {
-			showText = new String(input, "UTF-8");
+			showText = new String(trimByteArray(input), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -202,6 +202,26 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 		ChattingArea.append("[RECV]:" + showText + "\n");
 
 		return true;
+	}
+
+	private byte[] trimByteArray(byte[] input) {
+
+		byte[] ret = input;
+
+		for (int i = 0; i < input.length; i++) {
+			// 문자열 데이터인 input에 00이 있을 수 없음. 있는 경우, 잘못된 데이터로 간주해 뒤의 데이터를 버림
+			if (input[i] == 0) {
+
+				ret = new byte[i];
+				for (int j = 0; j < i; j++) {
+					ret[j] = input[j];
+				}
+
+				break;
+			}
+		}
+
+		return ret;
 	}
 
 	@Override

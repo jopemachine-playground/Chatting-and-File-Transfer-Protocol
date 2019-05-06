@@ -6,6 +6,8 @@ import org.jnetpcap.*;
 import org.jnetpcap.packet.PcapPacket;
 import org.jnetpcap.packet.PcapPacketHandler;
 
+import UnitTest.DebuggingHelper;
+
 // Network Interface Layer
 
 public class NILayer implements BaseLayer {
@@ -153,7 +155,7 @@ public class NILayer implements BaseLayer {
 	public boolean Send(byte[] input, int length) {
 		ByteBuffer buf = ByteBuffer.wrap(input);
 		// sendPacket(buf)가 Pcap.OK가 아닌 경우 에러가 난 경우.
-	
+		
 		if (m_AdapterObject.sendPacket(buf) != Pcap.OK) {
 			System.err.println(m_AdapterObject.getErr());
 			return false;
