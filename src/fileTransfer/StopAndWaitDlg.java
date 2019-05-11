@@ -14,12 +14,9 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 
 	public int nUpperLayerCount = 0;
 	public String pLayerName = null;
-	private String defaultName = null;
 	public BaseLayer p_UnderLayer = null;
 	public ArrayList<BaseLayer> p_aUpperLayer = new ArrayList<BaseLayer>();
 	BaseLayer UnderLayer;
-
-	private static LayerManager m_LayerMgr = LayerManager.getInstance();
 
 	private JTextField message_Box;
 
@@ -33,18 +30,7 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 	private JMenu mnNewMenu;
 	private JMenuItem mnAddressSettingButton;
 	private JMenuItem mnExitButton;
-
-	static {
-
-		try {
-			System.loadLibrary("jnetpcap");
-			// System.out.println(new File("jnetpcap.dll").getAbsolutePath());
-		} catch (UnsatisfiedLinkError e) {
-			JOptionPane.showMessageDialog(null, "Native code library failed to load.\n" + e, "Library Link Error",
-					JOptionPane.ERROR_MESSAGE);
-			System.exit(1);
-		}
-	}
+	private JMenuItem mntmFileTransfer;
 
 	public static StopAndWaitDlg getInstance() {
 		if (INSTANCE == null) {
@@ -57,7 +43,7 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 
 		pLayerName = pName;
 
-		setTitle("Stop and Wait Protocol");
+		setTitle("Chatting and File Transfer");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(250, 250, 620, 473);
 
@@ -70,6 +56,9 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 		mnAddressSettingButton = new JMenuItem("Mac Address Setting");
 
 		mnNewMenu.add(mnAddressSettingButton);
+		
+		mntmFileTransfer = new JMenuItem("File Transfer");
+		mnNewMenu.add(mntmFileTransfer);
 
 		mnExitButton = new JMenuItem("Exit");
 
@@ -156,6 +145,11 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 		});
 
 		mnAddressSettingButton.addActionListener(e -> AddressSettingDlg.getInstance().setVisible(true));
+		
+		
+		mntmFileTransfer.addActionListener(e -> {
+			FileAppLayer.getInstance().setVisible(true);
+		});
 	}
 
 	private boolean HandleSend() {
