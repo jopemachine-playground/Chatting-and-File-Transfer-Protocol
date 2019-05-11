@@ -58,6 +58,7 @@ public class ChatAppLayer implements BaseLayer {
 		// int는 4바이트 이기 때문에, 2바이트로 int를 모두 나타낼 수는 없음. 2^16 = 65536 까지만 표현 가능
 		// (그리고 type이 1 바이트 밖에 안 되기 때문에 보낼 수 있는 최대 바이트 길이는 255 *
 		// MESSAGE_FRAGMENTATION_CRITERIA 바이트 둘 중 작은 값으로 제한됨)
+		
 		if (value > (1 << 16)) {
 			System.err.append("Error - Too Big Message Length");
 		}
@@ -83,7 +84,7 @@ public class ChatAppLayer implements BaseLayer {
 
 	}
 
-	public byte[] ObjToByte(_CHAT_APP Header, byte[] input, int length) {
+	private byte[] ObjToByte(_CHAT_APP Header, byte[] input, int length) {
 		byte[] buf = new byte[length + 4];
 
 		buf[0] = Header.capp_totlen[0];
