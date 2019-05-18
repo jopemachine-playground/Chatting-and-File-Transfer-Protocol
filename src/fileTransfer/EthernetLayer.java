@@ -136,6 +136,7 @@ public class EthernetLayer implements BaseLayer {
 		
 		byte[] generateAckFrame = null;
 
+		System.out.println("실행1");
 		if ((isRightPacket(input) == false) || isRightAddress(input) == false) {
 			return false;
 		}
@@ -220,7 +221,8 @@ public class EthernetLayer implements BaseLayer {
 
 	private boolean isRightPacket(byte[] input) {
 		// type이 0x01, 0x00인 경우 Data 신호이다. 그 외엔 모두 더미 패킷으로 처리한다
-		if (!(((input[12] == 0x00) && (input[13] == 0x00)) || (input[12] == 0x01) && (input[13] == 0x00))) {
+		int temp = ByteCaster.byte2ToInt(input[12], input[13]);
+		if (!(temp == 2080 || temp == 2090 || temp == 2010 || temp == 2000)) {
 			return false;
 		}
 		return true;
