@@ -23,12 +23,15 @@ public class Main {
 		m_LayerMgr.AddLayer(new NILayer("Network_Interface"));
 		m_LayerMgr.AddLayer(new EthernetLayer("Ethernet"));
 		m_LayerMgr.AddLayer(new ChatAppLayer("ChatApp"));
-		m_LayerMgr.AddLayer(new FileAppLayer("FileApp"));
-		m_LayerMgr.AddLayer(new StopAndWaitDlg("GUI"));
+		m_LayerMgr.AddLayer(FileAppLayer.getInstance());
+		m_LayerMgr.AddLayer(StopAndWaitDlg.getInstance());
 		
 		m_LayerMgr.ConnectLayers(" Network_Interface ( *Ethernet ( *ChatApp ( *GUI ) ) ) ");
-		m_LayerMgr.ConnectLayers(" Network_Interface ( *Ethernet ( *FileApp ( *GUI ) ) ) ");
-
+		m_LayerMgr.ConnectLayers(" Ethernet ( *FileApp ( *GUI ) ) ");
+		
+		System.out.println("FileApp Layer Layer: " + ((FileAppLayer)(m_LayerMgr.GetLayer("FileApp"))).p_UnderLayer);
+		System.out.println("ChatApp Under Layer: " + ((ChatAppLayer)(m_LayerMgr.GetLayer("ChatApp"))).p_UnderLayer);
+		
 	}
 
 }

@@ -364,6 +364,8 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		
 		byte[] data = ObjToByte(header, fileName.getBytes(), fileName.length());
 		
+		System.out.println(p_UnderLayer);
+		
 		p_UnderLayer.Send(data, data.length);
 	} 
 	
@@ -400,7 +402,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		private void Wait_FileNameFrame() {
 			try {
 				// 파일 이름에 대한 응답이 올 때 까지 기다림
-				synchronized (send_lock) {
+				synchronized (fileNameFrame_lock) {
 					fileNameFrame_lock.wait();
 				}
 

@@ -47,7 +47,6 @@ public enum LayerManager {
 
 	public BaseLayer GetLayer(String pName) {
 		for (int i = 0; i < m_nLayerCount; i++) {
-			System.out.println(mp_aLayers.get(i).GetLayerName());
 			if (pName.compareTo(mp_aLayers.get(i).GetLayerName()) == 0)
 				return mp_aLayers.get(i);
 		}
@@ -59,6 +58,7 @@ public enum LayerManager {
 
 		LinkLayer(mp_sListHead);
 		
+		mp_sListHead = null;
 	}
 	
 	private void MakeList(String pcList) {
