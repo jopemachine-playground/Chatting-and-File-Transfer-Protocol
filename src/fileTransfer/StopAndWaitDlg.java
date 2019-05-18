@@ -191,10 +191,34 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 			showText = new String(trimByteArray(input), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
+			return false;
 		}
 
 		ChattingArea.append("[RECV]:" + showText + "\n");
 
+		return true;
+	}
+	
+	public boolean ReceiveFile(byte[] input, String fileName) {
+		
+		File file = new File(fileName);
+		
+		FileOutputStream fos = null;
+		
+		try {
+			fos = new FileOutputStream(file);
+			
+			fos.write(input);
+			
+			fos.close();
+		} 
+		catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+		}
+		
 		return true;
 	}
 

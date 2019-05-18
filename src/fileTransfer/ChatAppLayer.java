@@ -12,8 +12,7 @@ public class ChatAppLayer implements BaseLayer {
 	public BaseLayer p_UnderLayer = null;
 	public ArrayList<BaseLayer> p_aUpperLayer = new ArrayList<BaseLayer>();
 
-	// 실제론 1456을 사용
-	private static final int MESSAGE_FRAGMENTATION_CRITERIA = 10;
+	private static final int MESSAGE_FRAGMENTATION_CRITERIA = 1456;
 	private static final byte[] BUFFER_INITIALIZER = new byte[0];
 
 	private byte[] message_buffer = new byte[0];
@@ -27,7 +26,6 @@ public class ChatAppLayer implements BaseLayer {
 		byte capp_isAck;
 		byte[] capp_data;
 
-		// 한글로 할 경우 깨질지도 모름. 테스트 해 볼 것
 		public _CHAT_APP(int message_length, byte nth_frame, byte[] message_data, byte isAck) {
 			this.capp_isAck = isAck;
 
@@ -37,7 +35,6 @@ public class ChatAppLayer implements BaseLayer {
 			// type : 몇 번 째 단편화 조각인가?
 			this.capp_type = nth_frame;
 
-			// data가 메시지라면 위 레이어로 byte[]이 아니라 _CHAT_APP 객체를 보내야함? 왜 이렇게 함?
 			this.capp_data = message_data;
 		}
 	}
