@@ -87,9 +87,9 @@ public class EthernetLayer implements BaseLayer {
 		}
 	}
 
-	public boolean Send(byte[] input, int length) {
+	public boolean SendFrame(byte[] input, int length, int type) {
 
-		byte[] temp = Addressing(input, length, 0);
+		byte[] temp = Addressing(input, length, type);
 
 		if (p_UnderLayer.Send(temp, length + 14) == false) {
 			return false;
@@ -115,12 +115,17 @@ public class EthernetLayer implements BaseLayer {
 		buf[9] = m_Ethernet_Header.enet_srcaddr.addr[3];
 		buf[10] = m_Ethernet_Header.enet_srcaddr.addr[4];
 		buf[11] = m_Ethernet_Header.enet_srcaddr.addr[5];
-
+		
+		System.out.println(type);
+		
 		byte[] typeBytes = ByteCaster.intToByte2(type);
 
 		buf[12] = typeBytes[0];
 		buf[13] = typeBytes[1];
-
+		
+		System.out.println(buf[12]);
+		System.out.println(buf[13]);
+		
 		for (int i = 0; i < length; i++)
 			buf[14 + i] = input[i];
 
@@ -130,38 +135,48 @@ public class EthernetLayer implements BaseLayer {
 	public synchronized boolean Receive(byte[] input) {
 		
 		byte[] generateAckFrame = null;
-		
+
 		if ((isRightPacket(input) == false) || isRightAddress(input) == false) {
 			return false;
 		}
-
+		System.out.println("기본 실행 2");
+		System.out.println(input[12]);
+		System.out.println(input[13]);
+		
+		System.out.println(ByteCaster.byte2ToInt(input[12], input[13]));
+		
 		if (isChatAppAckSignal(input)) {
+			System.out.println("실행3");
 			LayerManager lm = LayerManager.getInstance();
 			((ChatAppLayer) lm.GetLayer("ChatApp")).SendThreadNotify();
 			return false;
 		}
 
 		else if (isFileAppAckSignal(input)) {
+			System.out.println("실행4");
 			LayerManager lm = LayerManager.getInstance();
 			((FileAppLayer) lm.GetLayer("FileApp")).SendThreadNotify();
 			return false;
 		}
 		
 		else if(isFromChatApp(input)) {
+			System.out.println("실행2");
 			input = RemoveAddessHeader(input, input.length);
 			GetUpperLayer(0).Receive(input);
-			generateAckFrame = Addressing(new byte[0], 0, 2080);
+			generateAckFrame = Addressing(new byte[0], 0, 2000);
 		}
 		
 		else if(isFromFileApp(input)) {
+			System.out.println("실행1");
 			input = RemoveAddessHeader(input, input.length);
 			GetUpperLayer(1).Receive(input);
-			generateAckFrame = Addressing(new byte[0], 0, 2090);
+			generateAckFrame = Addressing(new byte[0], 0, 2010);
 		}
 		else {
+			System.out.println("실행5");
 			assert(false);
 		}
-
+		
 		p_UnderLayer.Send(generateAckFrame, 14);
 		
 		return true;

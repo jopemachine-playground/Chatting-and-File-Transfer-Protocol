@@ -27,7 +27,7 @@ public class Main {
 		m_LayerMgr.AddLayer(new StopAndWaitDlg("GUI"));
 		
 		m_LayerMgr.ConnectLayers(" Network_Interface ( *Ethernet ( *ChatApp ( *GUI ) ) ) ");
-		m_LayerMgr.ConnectLayers(" Ethernet ( *FileApp ( *GUI ) ) ");
+		m_LayerMgr.ConnectLayers(" Network_Interface ( *Ethernet ( *FileApp ( *GUI ) ) ) ");
 
 	}
 

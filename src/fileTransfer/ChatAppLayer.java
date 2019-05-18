@@ -20,6 +20,8 @@ public class ChatAppLayer implements BaseLayer {
 	// 들어오고 나간 순서가 보장된다. 즉, 에러가 없다고 가정해, Queue를 사용했다
 	public Send_Thread sendingThread = null;
 
+	private static LayerManager m_LayerMgr = LayerManager.getInstance();
+	
 	private class _CHAT_APP {
 		byte[] capp_totlen;
 		byte capp_type;
@@ -266,8 +268,8 @@ public class ChatAppLayer implements BaseLayer {
 					header[0] = new _CHAT_APP(message_length, (byte) 0x00, input, (byte) 0);
 
 					byte[] data = ObjToByte(header[0], input, message_length);
-
-					p_UnderLayer.Send(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4);
+					
+					((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4, 2080);
 					
 					Wait_Ack();
 					
@@ -292,7 +294,7 @@ public class ChatAppLayer implements BaseLayer {
 							split_data = ObjToByte(header[i], split_data,
 									message_length % MESSAGE_FRAGMENTATION_CRITERIA);
 
-							p_UnderLayer.Send(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4);
+							((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4, 2080);
 							
 							Wait_Ack();
 						}
@@ -310,9 +312,9 @@ public class ChatAppLayer implements BaseLayer {
 							// System.out.print(new String(split_data));
 
 							split_data = ObjToByte(header[i], split_data, MESSAGE_FRAGMENTATION_CRITERIA);
-
-							p_UnderLayer.Send(split_data, MESSAGE_FRAGMENTATION_CRITERIA + 4);
-
+							
+							((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(split_data, MESSAGE_FRAGMENTATION_CRITERIA + 4, 2080);
+							
 							// notify로 들어온 값과 이번에 Send한 frame이 같은 n번째 라면 Ack를 기다리고, 아니라면 반복문을 더 돈다
 							
 							Wait_Ack();

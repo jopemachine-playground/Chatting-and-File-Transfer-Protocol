@@ -430,8 +430,8 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 					header[0] = new _FAPP_HEADER(file_fragment_length, 1, (byte) 0);
 
 					byte[] data = ObjToByte(header[0], input, file_fragment_length);
-
-					p_UnderLayer.Send(data, (file_fragment_length % FILE_FRAGMENTATION_CRITERIA) + 12);
+					
+					((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(data, (file_fragment_length % FILE_FRAGMENTATION_CRITERIA) + 12, 2090);
 
 					Wait_Ack();
 
@@ -453,8 +453,8 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 							split_data = ObjToByte(header[i], split_data,
 									file_fragment_length % FILE_FRAGMENTATION_CRITERIA);
-
-							p_UnderLayer.Send(split_data, (file_fragment_length % FILE_FRAGMENTATION_CRITERIA) + 12);
+							
+							((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(split_data, (file_fragment_length % FILE_FRAGMENTATION_CRITERIA) + 12, 2090);
 
 							Wait_Ack();
 						}
@@ -472,8 +472,9 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 							split_data = ObjToByte(header[i], split_data, FILE_FRAGMENTATION_CRITERIA);
 
-							p_UnderLayer.Send(split_data, FILE_FRAGMENTATION_CRITERIA + 12);
+							((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(split_data, FILE_FRAGMENTATION_CRITERIA + 12, 2090);
 
+							
 							// notify로 들어온 값과 이번에 Send한 frame이 같은 n번째 라면 Ack를 기다리고, 아니라면 반복문을 더 돈다
 
 							Wait_Ack();
