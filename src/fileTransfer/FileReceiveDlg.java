@@ -11,6 +11,9 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.border.BevelBorder;
+import java.awt.Font;
+import javax.swing.JTextArea;
+import javax.swing.JLabel;
 
 public class FileReceiveDlg extends JFrame{
 	
@@ -35,9 +38,10 @@ public class FileReceiveDlg extends JFrame{
 		progressBar = new JProgressBar();
 		progressBar.setBounds(12, 64, 420, 23);
 		chatting_InputPanel.add(progressBar);
-
-		Label transferProgrssiveBarLabel = new Label(fileName);
-		transferProgrssiveBarLabel.setBounds(12, 24, 231, 23);
+		System.out.println(fileName);
+		JLabel transferProgrssiveBarLabel = new JLabel(fileName);
+	
+		transferProgrssiveBarLabel.setBounds(12, 24, 420, 23);
 		chatting_InputPanel.add(transferProgrssiveBarLabel);
 		
 		setVisible(true);
@@ -55,5 +59,4 @@ public class FileReceiveDlg extends JFrame{
 	public String getName() {
 		return fileName;
 	}
-
 }

@@ -136,11 +136,10 @@ public class EthernetLayer implements BaseLayer {
 		
 		byte[] generateAckFrame = null;
 
-		System.out.println("실행1");
 		if ((isRightPacket(input) == false) || isRightAddress(input) == false) {
 			return false;
 		}
-		System.out.println("기본 실행 2");
+		System.out.println("기본 실행");
 		System.out.println(input[12]);
 		System.out.println(input[13]);
 		

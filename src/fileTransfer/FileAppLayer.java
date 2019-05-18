@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -54,18 +55,22 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		byte[] fapp_seq_num;
 		byte[] fapp_data;
 
-		public _FAPP_HEADER(int message_length, int nth_frame, byte isAck) {
+		public _FAPP_HEADER(int message_length, int fapp_type, int nth_frame, byte fapp_msg_type) {
 
+			// 전체 파일 크기
 			this.fapp_totlen = ByteCaster.intToByte4(message_length);
 
-			this.fapp_type = ByteCaster.intToByte2(nth_frame);
+			// 처음, 중간, 끝을 나타냄 (각각 00, 01, 02)
+			this.fapp_type = ByteCaster.intToByte2(fapp_type);
 			
-			// 0x00 으로 쓰이지 않던, msg_type을 isAck로 사용함
-			this.fapp_msg_type = isAck;
+			// 0이면 nameFrame, 1이면 dataFrame
+			this.fapp_msg_type = fapp_msg_type;
 
 			// 쓰이지 않음
 			this.ed = 0x00;
-			this.fapp_seq_num = new byte[4];
+			
+			// 몇 번째 프레임인지를 나타냄
+			this.fapp_seq_num = ByteCaster.intToByte4(nth_frame);
 
 			// 쓰이지 않음
 			this.fapp_data = null;
@@ -140,6 +145,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 	}
 
 	private byte[] ObjToByte(_FAPP_HEADER Header, byte[] input, int length) {
+
 		byte[] buf = new byte[length + 12];
 
 		buf[0] = Header.fapp_totlen[0];
@@ -158,18 +164,14 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		for (int i = 0; i < length; i++)
 			buf[12 + i] = input[i];
 
+		System.out.println(new String(input));
+		
 		return buf;
 	}
 
 	public void SendThreadNotify() {
 		synchronized (sendingThread) {
 			sendingThread.notify();
-		}
-	}
-
-	public void SendThreadNotifyArrivingFileNameFrame() {
-		synchronized (sendingThread) {
-			sendingThread.fileNameFrame_lock.notify();
 		}
 	}
 
@@ -232,7 +234,14 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		//  type이 0인 경우 == 파일 이름 프레임인 경우
 		if (ith_frame == 0) {
 
-			fileReceiveDlg = new FileReceiveDlg(new String(data));
+			System.out.println("Receive 실행1");
+			try {
+				//System.out.println(new String(data, "UTF-8"));
+				fileReceiveDlg = new FileReceiveDlg(new String(data, "UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			return true;
 		}
@@ -241,7 +250,9 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		else {
 			// 마지막 조각 (버퍼를 올림)
 			if ((ith_frame > 0 && (ith_frame == (total_length / FILE_FRAGMENTATION_CRITERIA) + 1))) {
-
+				
+				System.out.println("마지막 조각!");
+				
 				byte[] buf = new byte[file_fragments_buffer.length + (total_length % FILE_FRAGMENTATION_CRITERIA) + 1];
 
 				for (int i = 0; i < file_fragments_buffer.length; i++) {
@@ -265,6 +276,8 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			}
 			// 버퍼에 저장
 			else {
+				
+				System.out.println("버퍼에 저장!");
 
 				byte[] buf = new byte[file_fragments_buffer.length + FILE_FRAGMENTATION_CRITERIA];
 
@@ -324,7 +337,9 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		
 		SendFileNameFrame(file.getName());
 		
-		sendingThread.Wait_FileNameFrame();
+		//sendingThread.Wait_FileNameFrame();
+		sendingThread.Wait_Ack();
+		
 		
 		// 아래 코드에서 파일의 크기가 int형 변수보다 크면 문제가 발생함.
 		byte[] fileBytes = new byte[(int) file.length()];
@@ -339,6 +354,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			// 한 루프에 100 바이트 씩 아래 레이어 (Ethernet Layer) 로 내려 보냄
 			// 아닐 수도 있음. => 배열의 크기로 지정해주면 한 번에 내려갈지도 모름
 			while ((data = fis.read(fileBytes)) != -1) {
+				System.out.println("HandleSend 루프 도는 중");
 				sendingThread.filesQueue.add(fileBytes);
 			}
 
@@ -360,20 +376,25 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 	
 	private void SendFileNameFrame(String fileName) {
 		
-		_FAPP_HEADER header = new _FAPP_HEADER(fileName.length(), 0, (byte) 0);
+		_FAPP_HEADER header = new _FAPP_HEADER(fileName.length(), 0, 0, (byte) 0);
 		
-		byte[] data = ObjToByte(header, fileName.getBytes(), fileName.length());
+		byte[] data = null;
 		
-		System.out.println(p_UnderLayer);
+		try {
+			data = ObjToByte(header, fileName.getBytes("UTF-8"), fileName.getBytes().length);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
 		
-		p_UnderLayer.Send(data, data.length);
+		((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(data, data.length, 2090);
+		
 	} 
 	
 	class Send_Thread implements Runnable {
 
 		Queue<byte[]> filesQueue = new LinkedList<>();
 		Object send_lock = new Object();
-		Object fileNameFrame_lock = new Object();
+		// Object fileNameFrame_lock = new Object();
 
 		private void Wait_Ack() {
 			try {
@@ -399,17 +420,17 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			}
 		}
 
-		private void Wait_FileNameFrame() {
-			try {
-				// 파일 이름에 대한 응답이 올 때 까지 기다림
-				synchronized (fileNameFrame_lock) {
-					fileNameFrame_lock.wait();
-				}
-
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+//		private void Wait_FileNameFrame() {
+//			try {
+//				// 파일 이름에 대한 응답이 올 때 까지 기다림
+//				synchronized (fileNameFrame_lock) {
+//					fileNameFrame_lock.wait();
+//				}
+//
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
 
 		@Override
 		public void run() {
@@ -429,7 +450,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 				if (file_fragment_length < FILE_FRAGMENTATION_CRITERIA) {
 
 					// 단편화 하지 않음
-					header[0] = new _FAPP_HEADER(file_fragment_length, 1, (byte) 0);
+					header[0] = new _FAPP_HEADER(file_fragment_length, 2, 1, (byte) 1);
 
 					byte[] data = ObjToByte(header[0], input, file_fragment_length);
 					
@@ -451,7 +472,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 								split_data[j] = input[FILE_FRAGMENTATION_CRITERIA * i + j];
 							}
 
-							header[i] = new _FAPP_HEADER(file_fragment_length, (i + 2), (byte) 0);
+							header[i] = new _FAPP_HEADER(file_fragment_length, 2, (i + 2), (byte) 1);
 
 							split_data = ObjToByte(header[i], split_data,
 									file_fragment_length % FILE_FRAGMENTATION_CRITERIA);
@@ -470,7 +491,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 							}
 
 							// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
-							header[i] = new _FAPP_HEADER(file_fragment_length, (i + 2), (byte) 0);
+							header[i] = new _FAPP_HEADER(file_fragment_length, 1, (i + 2) ,(byte) 1);
 
 							split_data = ObjToByte(header[i], split_data, FILE_FRAGMENTATION_CRITERIA);
 
