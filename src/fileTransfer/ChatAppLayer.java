@@ -30,7 +30,7 @@ public class ChatAppLayer implements BaseLayer {
 			this.capp_isAck = isAck;
 
 			// totlen : 문자열의 길이
-			this.capp_totlen = intToByte2(message_length);
+			this.capp_totlen = ByteCaster.intToByte2(message_length);
 
 			// type : 몇 번 째 단편화 조각인가?
 			this.capp_type = nth_frame;
@@ -48,37 +48,6 @@ public class ChatAppLayer implements BaseLayer {
 		synchronized (sendingThread) {
 			sendingThread.notify();
 		}
-	}
-
-	byte[] intToByte2(int value) {
-
-		// int는 4바이트 이기 때문에, 2바이트로 int를 모두 나타낼 수는 없음. 2^16 = 65536 까지만 표현 가능
-		// (그리고 type이 1 바이트 밖에 안 되기 때문에 보낼 수 있는 최대 바이트 길이는 255 *
-		// MESSAGE_FRAGMENTATION_CRITERIA 바이트 둘 중 작은 값으로 제한됨)
-		
-		if (value > (1 << 16)) {
-			System.err.append("Error - Too Big Message Length");
-		}
-
-		byte[] temp = new byte[2];
-
-		temp[1] = (byte) ((value & 0x0000FF00) >> 8);
-		temp[0] = (byte) ((value & 0x000000FF));
-
-		return temp;
-	}
-
-	int byte2ToInt(byte little_byte, byte big_byte) {
-
-		int little_int = (int) little_byte;
-		int big_int = (int) big_byte;
-
-		if (little_int < 0) {
-			little_int += 256;
-		}
-
-		return (little_int + (big_int << 8));
-
 	}
 
 	private byte[] ObjToByte(_CHAT_APP Header, byte[] input, int length) {
@@ -152,7 +121,7 @@ public class ChatAppLayer implements BaseLayer {
 		// 단편화가 되어 있는 경우 (타입이 1 이상의 값을 갖는 경우)
 		else {
 
-			int message_length = byte2ToInt(little_length, big_length);
+			int message_length = ByteCaster.byte2ToInt(little_length, big_length);
 
 			// 마지막 조각 (버퍼를 올림)
 			if ((type > 0 && (type == (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1))

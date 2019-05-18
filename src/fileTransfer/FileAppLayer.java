@@ -56,9 +56,9 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 		public _FAPP_HEADER(int message_length, int nth_frame, byte isAck) {
 
-			this.fapp_totlen = intToByte4(message_length);
+			this.fapp_totlen = ByteCaster.intToByte4(message_length);
 
-			this.fapp_type = intToByte2(nth_frame);
+			this.fapp_type = ByteCaster.intToByte2(nth_frame);
 			
 			// 0x00 으로 쓰이지 않던, msg_type을 isAck로 사용함
 			this.fapp_msg_type = isAck;
@@ -129,53 +129,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		Label transferProgrssiveBarLabel = new Label("File Transfer Progrssive Bar");
 		transferProgrssiveBarLabel.setBounds(12, 10, 231, 23);
 		chatting_InputPanel.add(transferProgrssiveBarLabel);
-
-	}
-
-	byte[] intToByte2(int value) {
-
-		// int는 4바이트 이기 때문에, 2바이트로 int를 모두 나타낼 수는 없음. 2^16 = 65536 까지만 표현 가능
-		// (그리고 type이 1 바이트 밖에 안 되기 때문에 보낼 수 있는 최대 바이트 길이는 255 *
-		// MESSAGE_FRAGMENTATION_CRITERIA 바이트 둘 중 작은 값으로 제한됨)
-		
-		if (value > (1 << 16)) {
-			System.err.append("Error - Too Big Message Length");
-		}
-
-		byte[] temp = new byte[2];
-
-		temp[1] = (byte) ((value & 0x0000FF00) >> 8);
-		temp[0] = (byte) ((value & 0x000000FF));
-
-		return temp;
-	}
-
-	
-	byte[] intToByte4(int value) {
-		byte[] temp = new byte[4];
-
-		temp[0] |= (byte) ((value & 0xFF000000) >> 24);
-		temp[1] |= (byte) ((value & 0x00FF0000) >> 16);
-		temp[2] |= (byte) ((value & 0x0000FF00) >> 8);
-		temp[3] |= (byte) ((value & 0x000000FF));
-		return temp;
-
-	}
-
-	int byte4ToInt(byte[] value) {
-
-		if (value.length != 4) {
-			System.out.println("Error In byte4ToInt");
-		}
-
-		int temp = 0;
-
-		temp |= (value[3] << 24);
-		temp |= (value[2] << 16);
-		temp |= (value[1] << 8);
-		temp |= (value[0] << 0);
-
-		return temp;
 
 	}
 
@@ -270,9 +223,9 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			return false;
 		}
 
-		int total_length = byte4ToInt(new byte[] { input[0], input[1], input[2], input[3] });
+		int total_length = ByteCaster.byte4ToInt(new byte[] { input[0], input[1], input[2], input[3] });
 
-		int ith_frame = byte4ToInt(new byte[] { input[8], input[9], input[10], input[11] });
+		int ith_frame = ByteCaster.byte4ToInt(new byte[] { input[8], input[9], input[10], input[11] });
 
 		byte[] data = RemoveFappHeader(input, input.length);
 

@@ -26,7 +26,9 @@ public class EthernetLayer implements BaseLayer {
 		_ETHERNET_ADDR enet_dstaddr;
 		_ETHERNET_ADDR enet_srcaddr;
 		byte[] enet_type;
-		// type으로 Ack인 지, Data인지 나타냄. type이 01이라면 데이터를, 02라면 Ack 신호를 나타냄
+		// type으로 FileAppLayer에서 온 프레임인지 ChatAppLayer에서 온 프레임인지 나타냄. type이 2080이라면 채팅
+		// 프레임을, 2090이라면 파일 프레임을 나타냄
+		// 또한, 2000 이면 Ack 프레임을 나타내도록 했다.
 		byte[] enet_data;
 
 		public _ETHERNET_Frame() {
@@ -86,9 +88,9 @@ public class EthernetLayer implements BaseLayer {
 	}
 
 	public boolean Send(byte[] input, int length) {
-		
+
 		byte[] temp = Addressing(input, length, 0);
-		
+
 		if (p_UnderLayer.Send(temp, length + 14) == false) {
 			return false;
 		}
@@ -97,6 +99,7 @@ public class EthernetLayer implements BaseLayer {
 	}
 
 	public byte[] Addressing(byte[] input, int length, int type) {
+
 		byte[] buf = new byte[length + 14];
 
 		buf[0] = m_Ethernet_Header.enet_dstaddr.addr[0];
@@ -113,8 +116,10 @@ public class EthernetLayer implements BaseLayer {
 		buf[10] = m_Ethernet_Header.enet_srcaddr.addr[4];
 		buf[11] = m_Ethernet_Header.enet_srcaddr.addr[5];
 
-		buf[12] = (byte) type;
-		buf[13] = m_Ethernet_Header.enet_type[1];
+		byte[] typeBytes = ByteCaster.intToByte2(type);
+
+		buf[12] = typeBytes[0];
+		buf[13] = typeBytes[1];
 
 		for (int i = 0; i < length; i++)
 			buf[14 + i] = input[i];
@@ -124,28 +129,75 @@ public class EthernetLayer implements BaseLayer {
 
 	public synchronized boolean Receive(byte[] input) {
 		
+		byte[] generateAckFrame = null;
+		
 		if ((isRightPacket(input) == false) || isRightAddress(input) == false) {
 			return false;
 		}
 
-		if (isAckSignal(input)) {
+		if (isChatAppAckSignal(input)) {
 			LayerManager lm = LayerManager.getInstance();
 			((ChatAppLayer) lm.GetLayer("ChatApp")).SendThreadNotify();
 			return false;
 		}
 
-		input = RemoveAddessHeader(input, input.length);
+		else if (isFileAppAckSignal(input)) {
+			LayerManager lm = LayerManager.getInstance();
+			((FileAppLayer) lm.GetLayer("FileApp")).SendThreadNotify();
+			return false;
+		}
+		
+		else if(isFromChatApp(input)) {
+			input = RemoveAddessHeader(input, input.length);
+			GetUpperLayer(0).Receive(input);
+			generateAckFrame = Addressing(new byte[0], 0, 2080);
+		}
+		
+		else if(isFromFileApp(input)) {
+			input = RemoveAddessHeader(input, input.length);
+			GetUpperLayer(1).Receive(input);
+			generateAckFrame = Addressing(new byte[0], 0, 2090);
+		}
+		else {
+			assert(false);
+		}
 
-		GetUpperLayer(0).Receive(input);
-
-		p_UnderLayer.Send(Addressing(new byte[0], 0, 1), 14);
-
+		p_UnderLayer.Send(generateAckFrame, 14);
+		
 		return true;
 	}
 
-	private boolean isAckSignal(byte[] input) {
-		// input[12], 즉 isAck가 1인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를 깨움
-		if (input[12] == 1) {
+	private boolean isFromChatApp(byte[] input) {
+		// input[12], 즉 isAck가 2000인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를
+		// 깨움
+		if (ByteCaster.byte2ToInt(input[12], input[13]) == 2080) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean isFromFileApp(byte[] input) {
+		// input[12], 즉 isAck가 2000인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를
+		// 깨움
+		if (ByteCaster.byte2ToInt(input[12], input[13]) == 2090) {
+			return true;
+		}
+		return false;
+	}
+	
+	private boolean isChatAppAckSignal(byte[] input) {
+		// input[12], 즉 isAck가 2000인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를
+		// 깨움
+		if (ByteCaster.byte2ToInt(input[12], input[13]) == 2000) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean isFileAppAckSignal(byte[] input) {
+		// input[12], 즉 isAck가 2010인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를
+		// 깨움
+		if (ByteCaster.byte2ToInt(input[12], input[13]) == 2010) {
 			return true;
 		}
 		return false;
