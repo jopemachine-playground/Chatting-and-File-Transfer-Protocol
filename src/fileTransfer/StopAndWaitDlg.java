@@ -21,6 +21,8 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 	private JTextField message_Box;
 
 	private JScrollPane chattingScrollPanel;
+	
+	private LayerManager m_LayerMgr = LayerManager.getInstance();
 
 	Container contentPane;
 
@@ -39,7 +41,7 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 		return INSTANCE;
 	}
 
-	public StopAndWaitDlg(String pName) {
+	private StopAndWaitDlg(String pName) {
 
 		pLayerName = pName;
 
@@ -173,8 +175,8 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 		catch (UnsupportedEncodingException exception) {
 			exception.printStackTrace();
 		}
-
-		if (((ChatAppLayer) p_UnderLayer).Send(byte_text, byte_text.length) == false) {
+		
+		if (((ChatAppLayer) m_LayerMgr.GetLayer("ChatApp")).Send(byte_text, byte_text.length) == false) {
 			return false;
 		}
 

@@ -115,17 +115,12 @@ public class EthernetLayer implements BaseLayer {
 		buf[9] = m_Ethernet_Header.enet_srcaddr.addr[3];
 		buf[10] = m_Ethernet_Header.enet_srcaddr.addr[4];
 		buf[11] = m_Ethernet_Header.enet_srcaddr.addr[5];
-		
-		System.out.println(type);
-		
+
 		byte[] typeBytes = ByteCaster.intToByte2(type);
 
 		buf[12] = typeBytes[0];
 		buf[13] = typeBytes[1];
-		
-		System.out.println(buf[12]);
-		System.out.println(buf[13]);
-		
+
 		for (int i = 0; i < length; i++)
 			buf[14 + i] = input[i];
 
@@ -133,52 +128,53 @@ public class EthernetLayer implements BaseLayer {
 	}
 
 	public synchronized boolean Receive(byte[] input) {
-		
+
 		byte[] generateAckFrame = null;
 
 		if ((isRightPacket(input) == false) || isRightAddress(input) == false) {
 			return false;
 		}
-		System.out.println("기본 실행");
-		System.out.println(input[12]);
-		System.out.println(input[13]);
-		
-		System.out.println(ByteCaster.byte2ToInt(input[12], input[13]));
-		
+
 		if (isChatAppAckSignal(input)) {
-			System.out.println("실행3");
+
 			LayerManager lm = LayerManager.getInstance();
 			((ChatAppLayer) lm.GetLayer("ChatApp")).SendThreadNotify();
 			return false;
 		}
 
 		else if (isFileAppAckSignal(input)) {
-			System.out.println("실행4");
+
 			LayerManager lm = LayerManager.getInstance();
 			((FileAppLayer) lm.GetLayer("FileApp")).SendThreadNotify();
 			return false;
 		}
-		
-		else if(isFromChatApp(input)) {
-			System.out.println("실행2");
+
+		else if (isFromChatApp(input)) {
+
 			input = RemoveAddessHeader(input, input.length);
 			GetUpperLayer(0).Receive(input);
 			generateAckFrame = Addressing(new byte[0], 0, 2000);
 		}
-		
-		else if(isFromFileApp(input)) {
-			System.out.println("실행1");
+
+		else if (isFromFileApp(input)) {
+
 			input = RemoveAddessHeader(input, input.length);
 			GetUpperLayer(1).Receive(input);
 			generateAckFrame = Addressing(new byte[0], 0, 2010);
 		}
-		else {
-			System.out.println("실행5");
-			assert(false);
+
+		else if (isTransferCanceledFrame(input)) {
+			LayerManager lm = LayerManager.getInstance();
+			((FileAppLayer) lm.GetLayer("FileApp")).ReceiveTransferCanceledFrame();
+			return false;
 		}
-		
+
+		else {
+			assert (false);
+		}
+
 		p_UnderLayer.Send(generateAckFrame, 14);
-		
+
 		return true;
 	}
 
@@ -199,7 +195,7 @@ public class EthernetLayer implements BaseLayer {
 		}
 		return false;
 	}
-	
+
 	private boolean isChatAppAckSignal(byte[] input) {
 		// input[12], 즉 isAck가 2000인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를
 		// 깨움
@@ -218,10 +214,17 @@ public class EthernetLayer implements BaseLayer {
 		return false;
 	}
 
+	private boolean isTransferCanceledFrame(byte[] input) {
+		if (ByteCaster.byte2ToInt(input[12], input[13]) == 2020) {
+			return true;
+		}
+		return false;
+	}
+	
 	private boolean isRightPacket(byte[] input) {
 		// type이 0x01, 0x00인 경우 Data 신호이다. 그 외엔 모두 더미 패킷으로 처리한다
 		int temp = ByteCaster.byte2ToInt(input[12], input[13]);
-		if (!(temp == 2080 || temp == 2090 || temp == 2010 || temp == 2000)) {
+		if (!(temp == 2080 || temp == 2090 || temp == 2010 || temp == 2000 || temp == 2020)) {
 			return false;
 		}
 		return true;

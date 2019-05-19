@@ -14,12 +14,16 @@ import javax.swing.border.BevelBorder;
 import java.awt.Font;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class FileReceiveDlg extends JFrame{
 	
 	private String fileName;
 	
 	private JProgressBar progressBar;
+	
+	private JButton quitButton;
 	
 	public FileReceiveDlg(String transferringFileName) {
 		
@@ -37,6 +41,7 @@ public class FileReceiveDlg extends JFrame{
 
 		progressBar = new JProgressBar();
 		progressBar.setBounds(12, 64, 420, 23);
+		progressBar.setStringPainted(true);
 		chatting_InputPanel.add(progressBar);
 		System.out.println(fileName);
 		JLabel transferProgrssiveBarLabel = new JLabel(fileName);
@@ -44,16 +49,30 @@ public class FileReceiveDlg extends JFrame{
 		transferProgrssiveBarLabel.setBounds(12, 24, 420, 23);
 		chatting_InputPanel.add(transferProgrssiveBarLabel);
 		
+		quitButton = new JButton("OK");
+		quitButton.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e) {
+				setVisible(false);
+			}
+		});
+		quitButton.setEnabled(false);
+		quitButton.setBounds(335, 96, 97, 23);
+		chatting_InputPanel.add(quitButton);
+		
 		setVisible(true);
 	}
 	
-	public void AdjustProgressiveBar(float fileTransferringPercent) {
+	public void AdjustProgressiveBar(int fileTransferringPercent) {
+		
+		this.setTitle("File Transfer Completed");
+		progressBar.setValue(fileTransferringPercent);
 		
 	}
 	
-	// 전송이 종료되면 ( 전송이 100%가 되면 ) 창을 닫음.
+	// 전송이 종료되면 ( 전송이 100%가 되면 ) 창을 닫을 수 있게함.
 	public void QuitTransfer() {
-		setVisible(false);
+		quitButton.setEnabled(true);
 	}
 	
 	public String getName() {
