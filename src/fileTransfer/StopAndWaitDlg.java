@@ -3,6 +3,9 @@ package fileTransfer;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import javax.swing.*;
@@ -204,20 +207,11 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 	public boolean ReceiveFile(byte[] input, String fileName) {
 		
 		File file = new File(fileName);
-		
-		FileOutputStream fos = null;
-		
+		Path path = Paths.get(System.getProperty("user.dir") + "\\" + fileName);
 		try {
-			fos = new FileOutputStream(file);
-			
-			fos.write(input);
-			
-			fos.close();
-		} 
-		catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		catch(IOException e) {
+			Files.write(path, input);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		

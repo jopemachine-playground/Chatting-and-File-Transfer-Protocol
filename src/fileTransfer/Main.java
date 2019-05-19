@@ -18,7 +18,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
-
+		
 		// 네트워크 인터페이스 (1) 
 		m_LayerMgr.AddLayer(new NILayer("Network_Interface"));
 		

@@ -65,13 +65,13 @@ public class FileReceiveDlg extends JFrame{
 	
 	public void AdjustProgressiveBar(int fileTransferringPercent) {
 		
-		this.setTitle("File Transfer Completed");
 		progressBar.setValue(fileTransferringPercent);
 		
 	}
 	
 	// 전송이 종료되면 ( 전송이 100%가 되면 ) 창을 닫을 수 있게함.
 	public void QuitTransfer() {
+		this.setTitle("File Transfer Completed");
 		quitButton.setEnabled(true);
 	}
 	
