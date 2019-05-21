@@ -1,4 +1,4 @@
-package fileTransfer;
+package fileTransfer_Simplest;
 
 import java.awt.EventQueue;
 import java.awt.Label;

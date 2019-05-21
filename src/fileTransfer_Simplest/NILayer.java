@@ -1,4 +1,4 @@
-package stopandwait;
+package fileTransfer_Simplest;
 
 import java.nio.ByteBuffer;
 import java.util.*;

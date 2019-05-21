@@ -1,9 +1,9 @@
-package fileTransfer;
+package fileTransfer_Simplest;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import UnitTest.DebuggingHelper;
+import Utility.DebuggingHelper;
 
 public class EthernetLayer implements BaseLayer {
 

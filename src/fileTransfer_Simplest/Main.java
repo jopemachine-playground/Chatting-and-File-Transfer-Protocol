@@ -1,4 +1,4 @@
-package fileTransfer;
+package fileTransfer_Simplest;
 
 import javax.swing.JOptionPane;
 
@@ -32,7 +32,7 @@ public class Main {
 		m_LayerMgr.AddLayer(FileAppLayer.getInstance());
 		
 		// 응용 프로그램 계층(4)
-		m_LayerMgr.AddLayer(StopAndWaitDlg.getInstance());
+		m_LayerMgr.AddLayer(GUILayer.getInstance());
 		
 		m_LayerMgr.ConnectLayers(" Network_Interface ( *Ethernet ( *ChatApp ( *GUI ) ) ) ");
 		m_LayerMgr.ConnectLayers(" Ethernet ( *FileApp ( *GUI ) ) ");

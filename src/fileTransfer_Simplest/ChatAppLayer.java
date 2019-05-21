@@ -1,4 +1,4 @@
-package stopandwait;
+package fileTransfer_Simplest;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -12,8 +12,7 @@ public class ChatAppLayer implements BaseLayer {
 	public BaseLayer p_UnderLayer = null;
 	public ArrayList<BaseLayer> p_aUpperLayer = new ArrayList<BaseLayer>();
 
-	// 실제론 1456을 사용
-	private static final int MESSAGE_FRAGMENTATION_CRITERIA = 10;
+	private static final int MESSAGE_FRAGMENTATION_CRITERIA = 1456;
 	private static final byte[] BUFFER_INITIALIZER = new byte[0];
 
 	private byte[] message_buffer = new byte[0];
@@ -21,23 +20,23 @@ public class ChatAppLayer implements BaseLayer {
 	// 들어오고 나간 순서가 보장된다. 즉, 에러가 없다고 가정해, Queue를 사용했다
 	public Send_Thread sendingThread = null;
 
+	private static LayerManager m_LayerMgr = LayerManager.getInstance();
+	
 	private class _CHAT_APP {
 		byte[] capp_totlen;
 		byte capp_type;
 		byte capp_isAck;
 		byte[] capp_data;
 
-		// 한글로 할 경우 깨질지도 모름. 테스트 해 볼 것
 		public _CHAT_APP(int message_length, byte nth_frame, byte[] message_data, byte isAck) {
 			this.capp_isAck = isAck;
 
 			// totlen : 문자열의 길이
-			this.capp_totlen = intToByte2(message_length);
+			this.capp_totlen = ByteCaster.intToByte2(message_length);
 
 			// type : 몇 번 째 단편화 조각인가?
 			this.capp_type = nth_frame;
 
-			// data가 메시지라면 위 레이어로 byte[]이 아니라 _CHAT_APP 객체를 보내야함? 왜 이렇게 함?
 			this.capp_data = message_data;
 		}
 	}
@@ -53,37 +52,7 @@ public class ChatAppLayer implements BaseLayer {
 		}
 	}
 
-	byte[] intToByte2(int value) {
-
-		// int는 4바이트 이기 때문에, 2바이트로 int를 모두 나타낼 수는 없음. 2^16 = 65536 까지만 표현 가능
-		// (그리고 type이 1 바이트 밖에 안 되기 때문에 보낼 수 있는 최대 바이트 길이는 255 *
-		// MESSAGE_FRAGMENTATION_CRITERIA 바이트 둘 중 작은 값으로 제한됨)
-		if (value > (1 << 16)) {
-			System.err.append("Error - Too Big Message Length");
-		}
-
-		byte[] temp = new byte[2];
-
-		temp[1] = (byte) ((value & 0x0000FF00) >> 8);
-		temp[0] = (byte) ((value & 0x000000FF));
-
-		return temp;
-	}
-
-	int byte2ToInt(byte little_byte, byte big_byte) {
-
-		int little_int = (int) little_byte;
-		int big_int = (int) big_byte;
-
-		if (little_int < 0) {
-			little_int += 256;
-		}
-
-		return (little_int + (big_int << 8));
-
-	}
-
-	public byte[] ObjToByte(_CHAT_APP Header, byte[] input, int length) {
+	private byte[] ObjToByte(_CHAT_APP Header, byte[] input, int length) {
 		byte[] buf = new byte[length + 4];
 
 		buf[0] = Header.capp_totlen[0];
@@ -116,9 +85,8 @@ public class ChatAppLayer implements BaseLayer {
 	
 	public void Send_Ack(byte type) {
 
-		// _CHAT_APP ack = new _CHAT_APP(0, type, null, (byte) 1);
-
 		p_UnderLayer.Send(ObjToByte(new _CHAT_APP(0, type, null, (byte) 1), new byte[0], 0), 4);
+	
 	}
 
 	public byte[] RemoveCappHeader(byte[] input, int length) {
@@ -154,7 +122,7 @@ public class ChatAppLayer implements BaseLayer {
 		// 단편화가 되어 있는 경우 (타입이 1 이상의 값을 갖는 경우)
 		else {
 
-			int message_length = byte2ToInt(little_length, big_length);
+			int message_length = ByteCaster.byte2ToInt(little_length, big_length);
 
 			// 마지막 조각 (버퍼를 올림)
 			if ((type > 0 && (type == (message_length / MESSAGE_FRAGMENTATION_CRITERIA) + 1))
@@ -299,8 +267,8 @@ public class ChatAppLayer implements BaseLayer {
 					header[0] = new _CHAT_APP(message_length, (byte) 0x00, input, (byte) 0);
 
 					byte[] data = ObjToByte(header[0], input, message_length);
-
-					p_UnderLayer.Send(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4);
+					
+					((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4, 2080);
 					
 					Wait_Ack();
 					
@@ -325,7 +293,7 @@ public class ChatAppLayer implements BaseLayer {
 							split_data = ObjToByte(header[i], split_data,
 									message_length % MESSAGE_FRAGMENTATION_CRITERIA);
 
-							p_UnderLayer.Send(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4);
+							((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(split_data, (message_length % MESSAGE_FRAGMENTATION_CRITERIA) + 4, 2080);
 							
 							Wait_Ack();
 						}
@@ -343,9 +311,9 @@ public class ChatAppLayer implements BaseLayer {
 							// System.out.print(new String(split_data));
 
 							split_data = ObjToByte(header[i], split_data, MESSAGE_FRAGMENTATION_CRITERIA);
-
-							p_UnderLayer.Send(split_data, MESSAGE_FRAGMENTATION_CRITERIA + 4);
-
+							
+							((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(split_data, MESSAGE_FRAGMENTATION_CRITERIA + 4, 2080);
+							
 							// notify로 들어온 값과 이번에 Send한 frame이 같은 n번째 라면 Ack를 기다리고, 아니라면 반복문을 더 돈다
 							
 							Wait_Ack();

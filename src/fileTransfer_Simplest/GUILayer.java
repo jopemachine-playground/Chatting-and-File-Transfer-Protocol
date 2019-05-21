@@ -1,4 +1,4 @@
-package fileTransfer;
+package fileTransfer_Simplest;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -11,9 +11,9 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
-public class StopAndWaitDlg extends JFrame implements BaseLayer {
+public class GUILayer extends JFrame implements BaseLayer {
 
-	private static StopAndWaitDlg INSTANCE;
+	private static GUILayer INSTANCE;
 
 	public int nUpperLayerCount = 0;
 	public String pLayerName = null;
@@ -37,18 +37,18 @@ public class StopAndWaitDlg extends JFrame implements BaseLayer {
 	private JMenuItem mnExitButton;
 	private JMenuItem mntmFileTransfer;
 
-	public static StopAndWaitDlg getInstance() {
+	public static GUILayer getInstance() {
 		if (INSTANCE == null) {
-			INSTANCE = new StopAndWaitDlg("GUI");
+			INSTANCE = new GUILayer("GUI");
 		}
 		return INSTANCE;
 	}
 
-	private StopAndWaitDlg(String pName) {
+	private GUILayer(String pName) {
 
 		pLayerName = pName;
 
-		setTitle("Chatting and File Transfer");
+		setTitle("Chatting and File Transfer (Implemented Simplest)");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(250, 250, 620, 473);
 

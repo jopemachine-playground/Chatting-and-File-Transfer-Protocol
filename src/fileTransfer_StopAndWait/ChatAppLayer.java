@@ -1,10 +1,10 @@
-package fileTransfer;
+package fileTransfer_StopAndWait;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import UnitTest.DebuggingHelper;
+import Utility.DebuggingHelper;
 
 public class ChatAppLayer implements BaseLayer {
 	public int nUpperLayerCount = 0;
@@ -85,9 +85,8 @@ public class ChatAppLayer implements BaseLayer {
 	
 	public void Send_Ack(byte type) {
 
-		// _CHAT_APP ack = new _CHAT_APP(0, type, null, (byte) 1);
-
 		p_UnderLayer.Send(ObjToByte(new _CHAT_APP(0, type, null, (byte) 1), new byte[0], 0), 4);
+	
 	}
 
 	public byte[] RemoveCappHeader(byte[] input, int length) {

@@ -1,4 +1,4 @@
-package fileTransfer;
+package fileTransfer_StopAndWait;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;

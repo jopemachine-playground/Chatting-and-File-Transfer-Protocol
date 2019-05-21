@@ -1,4 +1,4 @@
-package fileTransfer;
+package fileTransfer_StopAndWait;
 
 import static org.junit.Assert.assertArrayEquals;
 
