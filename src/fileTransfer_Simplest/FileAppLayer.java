@@ -1,7 +1,5 @@
 package fileTransfer_Simplest;
 
-import static org.junit.Assert.assertArrayEquals;
-
 import java.awt.Label;
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,6 +8,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import javax.swing.JButton;
@@ -43,7 +42,17 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 	private static final int FILE_FRAGMENTATION_CRITERIA = 1448;
 	private static final byte[] BUFFER_INITIALIZER = new byte[0];
 
-	private byte[] file_fragments_buffer = new byte[0];
+	private List<FileFrame> file_fragments_buffer = new LinkedList();
+
+	private class FileFrame {
+		private byte[] bytes;
+		private int index;
+
+		public FileFrame(byte[] _bytes, int _index) {
+			this.bytes = _bytes;
+			this.index = _index;
+		}
+	}
 
 	private static LayerManager m_LayerMgr = LayerManager.getInstance();
 
@@ -163,10 +172,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		cancelButton.setBounds(312, 137, 120, 23);
 		chatting_InputPanel.add(cancelButton);
 
-		cancelButton.addActionListener(e -> {
-			HandleTransferCancelButtonClicked();
-		});
-
 	}
 
 	public static FileAppLayer getInstance() {
@@ -197,12 +202,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			buf[12 + i] = input[i];
 
 		return buf;
-	}
-
-	public void SendThreadNotify() {
-		synchronized (sendingThread) {
-			sendingThread.notify();
-		}
 	}
 
 	@Override
@@ -259,86 +258,54 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 		int fapp_type = ByteCaster.byte2ToInt(input[4], input[5]);
 
-		int ith_frame = ByteCaster.byte4ToInt(new byte[] { input[8], input[9], input[10], input[11] });
-
 		byte[] data = RemoveFappHeader(input, input.length);
 
-		// type이 0인 경우 == 파일 이름 프레임인 경우, FileReceiveDlg를 띄워, 전송률을 확인할 수 있게함
-		if (fapp_type == 0) {
+		int ith_frame = ByteCaster.byte4ToInt(new byte[] { input[8], input[9], input[10], input[11] });
 
+		if (fileReceiveDlg == null) {
+			fileReceiveDlg = new FileReceiveDlg();
+		}
+
+		// 파일 이름 설정
+		if (fapp_type == 0) {
 			try {
-				fileReceiveDlg = new FileReceiveDlg(new String(data, "UTF-8"));
+				fileReceiveDlg.setName(new String(data, "UTF-8"));
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
 			}
-
-			return true;
 		}
-
-		// 타입이 1 이상의 값을 갖는 경우
+		// 이외에 데이터 프레임
 		else {
-			// 마지막 조각 (버퍼를 올림)
-			if (fapp_type == 2) {
-
-				fileReceiveDlg.AdjustProgressiveBar(100);
-
-				// System.out.println("마지막 조각!");
-
-				byte[] buf = new byte[file_fragments_buffer.length + (total_length % FILE_FRAGMENTATION_CRITERIA)];
-
-				for (int i = 0; i < file_fragments_buffer.length; i++) {
-					buf[i] = file_fragments_buffer[i];
-				}
-
-				for (int i = 0; i < (total_length % FILE_FRAGMENTATION_CRITERIA); i++) {
-					buf[i + file_fragments_buffer.length] = data[i];
-				}
-
-				file_fragments_buffer = buf;
-
-				((GUILayer) m_LayerMgr.GetLayer("GUI")).ReceiveFile(file_fragments_buffer,
-						fileReceiveDlg.getName());
-
-				file_fragments_buffer = BUFFER_INITIALIZER;
-
-				fileReceiveDlg.QuitTransfer();
-
-				return true;
-
-			}
-			// fapp_type이 1인 경우, 데이터 프레임이므로 순서에 맞게 버퍼에 저장
-			else if (fapp_type == 1) {
-
-				// System.out.println("버퍼에 저장!");
-
-//				System.out.println((float)ith_frame);
-//				System.out.println(((float)ith_frame/((total_length) / FILE_FRAGMENTATION_CRITERIA)));
-//				System.out.println(((float)ith_frame/((total_length) / FILE_FRAGMENTATION_CRITERIA)) * 100);
-//				System.out.println(Math.round(((float)ith_frame/((total_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
-
-				fileReceiveDlg.AdjustProgressiveBar(
-						Math.round(((float) ith_frame / ((total_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
-
-				byte[] buf = new byte[file_fragments_buffer.length + FILE_FRAGMENTATION_CRITERIA];
-
-				for (int i = 0; i < file_fragments_buffer.length; i++) {
-					buf[i] = file_fragments_buffer[i];
-				}
-
-				for (int i = 0; i < FILE_FRAGMENTATION_CRITERIA; i++) {
-					buf[i + file_fragments_buffer.length] = data[i];
-				}
-
-				file_fragments_buffer = buf;
-
-				return true;
-			}
+			file_fragments_buffer.add(new FileFrame(data, ith_frame));
+			fileReceiveDlg.AddIndex();
 		}
 
-		assert (false);
+		// 모든 프레임을 수신함
+		if (fileReceiveDlg.GetIndex() == total_length) {
+			((GUILayer) m_LayerMgr.GetLayer("GUI")).ReceiveFile(sortBytesList(file_fragments_buffer, total_length),
+					fileReceiveDlg.getName());
 
-		return false;
+			fileReceiveDlg.QuitTransfer();
+			fileReceiveDlg = null;
+		}
 
+		return true;
+
+	}
+
+	// 한 개의 파일이 한 바이트 배열안에 모두 들어간다고 가정함 (파일의 크기가 2기가 이하라고 가정)
+	private byte[] sortBytesList(List<FileFrame> byteList, int fileLength) {
+
+		byte[] result = new byte[fileLength];
+
+		for (int i = 0; i < byteList.size(); i++) {
+			for (int j = 0; j < byteList.get(i).bytes.length; j++) {
+				
+				// 아래 로직 수정 필요
+				result[j] = byteList.get(i).bytes[j];
+			}
+		}
+		return result;
 	}
 
 	public byte[] RemoveFappHeader(byte[] input, int length) {
@@ -378,9 +345,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		}
 
 		SendFileNameFrame(file.getName());
-
-		// sendingThread.Wait_FileNameFrame();
-		sendingThread.Wait_Ack();
 
 		byte[] fileBytes = new byte[(int) file.length()];
 
@@ -431,47 +395,12 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 	}
 
-	public void HandleTransferCancelButtonClicked() {
-
-		byte[] data = null;
-
-		_FAPP_HEADER header = Fapp_Builder.setFileTotalLength(0).setFappType(0).setSequenceNumber(0)
-				.setMsgType((byte) 1).build();
-
-		data = ObjToByte(header, data, 0);
-
-		// 상대 측에 전송 취소 프레임을 보내고 쓰레드의 전송을 취소함
-		((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(data, 12, 2020);
-
-		sendingThread.TransferCancel();
-
-	}
-
-	public void ReceiveTransferCanceledFrame() {
-
-		file_fragments_buffer = BUFFER_INITIALIZER;
-		JOptionPane.showMessageDialog(null, "Tranfer quit in compulsion", "Error", JOptionPane.ERROR_MESSAGE);
-
-	}
-
 	class Send_Thread implements Runnable {
 
 		// 파일들의 큐. 파일 하나하나
 		Queue<byte[]> filesQueue = new LinkedList<>();
 		Object send_lock = new Object();
 		Thread mThread;
-
-		private void Wait_Ack() {
-			try {
-				// 한 프레임을 보내고, Ack 신호가 올 때 까지 대기한다.
-				synchronized (this) {
-					this.wait();
-				}
-
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
 
 		private void Wait_Send() {
 			try {
@@ -483,11 +412,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
-
-		@SuppressWarnings("deprecation")
-		public void TransferCancel() {
-			mThread.stop();
 		}
 
 		@Override
@@ -516,8 +440,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 					((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(data,
 							(file_fragment_length % FILE_FRAGMENTATION_CRITERIA) + 12, 2090);
 
-					Wait_Ack();
-
 				}
 
 				else {
@@ -543,7 +465,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 							progressBar.setValue(100);
 
-							Wait_Ack();
 						}
 
 						else {
@@ -568,8 +489,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 									.round(((float) i / ((file_fragment_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
 
 							// notify로 들어온 값과 이번에 Send한 frame이 같은 n번째 라면 Ack를 기다리고, 아니라면 반복문을 더 돈다
-
-							Wait_Ack();
 
 						}
 					}

@@ -142,38 +142,23 @@ public class EthernetLayer implements BaseLayer {
 			return false;
 		}
 
-		else if (isFileAppAckSignal(input)) {
-
-			LayerManager lm = LayerManager.getInstance();
-			((FileAppLayer) lm.GetLayer("FileApp")).SendThreadNotify();
-			return false;
-		}
-
 		else if (isFromChatApp(input)) {
 
 			input = RemoveAddessHeader(input, input.length);
 			GetUpperLayer(0).Receive(input);
 			generateAckFrame = Addressing(new byte[0], 0, 2000);
+			p_UnderLayer.Send(generateAckFrame, 14);
 		}
 
 		else if (isFromFileApp(input)) {
 
 			input = RemoveAddessHeader(input, input.length);
 			GetUpperLayer(1).Receive(input);
-			generateAckFrame = Addressing(new byte[0], 0, 2010);
-		}
-
-		else if (isTransferCanceledFrame(input)) {
-			LayerManager lm = LayerManager.getInstance();
-			((FileAppLayer) lm.GetLayer("FileApp")).ReceiveTransferCanceledFrame();
-			return false;
 		}
 
 		else {
 			assert (false);
 		}
-
-		p_UnderLayer.Send(generateAckFrame, 14);
 
 		return true;
 	}
@@ -200,22 +185,6 @@ public class EthernetLayer implements BaseLayer {
 		// input[12], 즉 isAck가 2000인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를
 		// 깨움
 		if (ByteCaster.byte2ToInt(input[12], input[13]) == 2000) {
-			return true;
-		}
-		return false;
-	}
-
-	private boolean isFileAppAckSignal(byte[] input) {
-		// input[12], 즉 isAck가 2010인 경우 Ack 신호를 나타내므로, false를 리턴하고 Notify를 전달해 송신 쓰레드를
-		// 깨움
-		if (ByteCaster.byte2ToInt(input[12], input[13]) == 2010) {
-			return true;
-		}
-		return false;
-	}
-
-	private boolean isTransferCanceledFrame(byte[] input) {
-		if (ByteCaster.byte2ToInt(input[12], input[13]) == 2020) {
 			return true;
 		}
 		return false;

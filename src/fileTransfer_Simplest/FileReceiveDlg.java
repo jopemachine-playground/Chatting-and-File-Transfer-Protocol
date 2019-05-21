@@ -25,9 +25,20 @@ public class FileReceiveDlg extends JFrame{
 	
 	private JButton quitButton;
 	
-	public FileReceiveDlg(String transferringFileName) {
+	// Index는 받은 프레임의 갯수 (NameFrame 제외)
+	private int bufferIndex = 0;
+	
+	public void AddIndex() {
+		bufferIndex++;
+	}
+	
+	public int GetIndex() {
+		return bufferIndex;
+	}
+	
+	public FileReceiveDlg() {
 		
-		fileName = transferringFileName;
+		fileName = "Loading...";
 		
 		setTitle("File Receiving..");
 
@@ -64,18 +75,21 @@ public class FileReceiveDlg extends JFrame{
 	}
 	
 	public void AdjustProgressiveBar(int fileTransferringPercent) {
-		
 		progressBar.setValue(fileTransferringPercent);
-		
 	}
 	
 	// 전송이 종료되면 ( 전송이 100%가 되면 ) 창을 닫을 수 있게함.
 	public void QuitTransfer() {
 		this.setTitle("File Transfer Completed");
 		quitButton.setEnabled(true);
+		bufferIndex = 0;
 	}
 	
 	public String getName() {
 		return fileName;
+	}
+	
+	public void setName(String transferringFileName) {
+		fileName = transferringFileName;
 	}
 }

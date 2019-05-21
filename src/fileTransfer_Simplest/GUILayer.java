@@ -1,15 +1,38 @@
 package fileTransfer_Simplest;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
 
-import javax.swing.*;
-import javax.swing.border.*;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.ScrollPaneLayout;
+import javax.swing.UIManager;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 
 public class GUILayer extends JFrame implements BaseLayer {
 
@@ -175,8 +198,8 @@ public class GUILayer extends JFrame implements BaseLayer {
 			byte_text = message_Box.getText().getBytes("UTF-8");
 		}
 
-		catch (UnsupportedEncodingException exception) {
-			exception.printStackTrace();
+		catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
 		}
 		
 		if (((ChatAppLayer) m_LayerMgr.GetLayer("ChatApp")).Send(byte_text, byte_text.length) == false) {
@@ -210,7 +233,12 @@ public class GUILayer extends JFrame implements BaseLayer {
 		Path path = Paths.get(System.getProperty("user.dir") + "\\" + fileName);
 		try {
 			Files.write(path, input);
-		} catch (IOException e) {
+		} 
+		catch(AccessDeniedException e) {
+			JOptionPane.showMessageDialog(null, "need to change File Download Path", "path Access Denied Exception",
+					JOptionPane.ERROR_MESSAGE);
+		}
+		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
