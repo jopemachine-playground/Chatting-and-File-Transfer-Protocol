@@ -54,7 +54,6 @@ public class FileReceiveDlg extends JFrame{
 		progressBar.setBounds(12, 64, 420, 23);
 		progressBar.setStringPainted(true);
 		chatting_InputPanel.add(progressBar);
-		System.out.println(fileName);
 		JLabel transferProgrssiveBarLabel = new JLabel(fileName);
 	
 		transferProgrssiveBarLabel.setBounds(12, 24, 420, 23);

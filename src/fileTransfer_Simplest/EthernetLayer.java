@@ -151,7 +151,6 @@ public class EthernetLayer implements BaseLayer {
 		}
 
 		else if (isFromFileApp(input)) {
-
 			input = RemoveAddessHeader(input, input.length);
 			GetUpperLayer(1).Receive(input);
 		}

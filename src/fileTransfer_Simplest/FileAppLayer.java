@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -20,6 +21,8 @@ import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.border.BevelBorder;
 import javax.swing.filechooser.FileSystemView;
+
+import Utility.DebuggingHelper;
 
 public class FileAppLayer extends JFrame implements BaseLayer {
 
@@ -44,13 +47,26 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 	private List<FileFrame> file_fragments_buffer = new LinkedList();
 
-	private class FileFrame {
+	private class FileFrame implements Comparable<FileFrame>{
 		private byte[] bytes;
 		private int index;
 
 		public FileFrame(byte[] _bytes, int _index) {
 			this.bytes = _bytes;
 			this.index = _index;
+		}
+
+		@Override
+		public int compareTo(FileFrame otherFrame) {
+			if(this.index > otherFrame.index) {
+				return 1;
+			}
+			else if(this.index < otherFrame.index) {
+				return -1;
+			}
+			else {
+				return 0;
+			}
 		}
 	}
 
@@ -270,21 +286,28 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		if (fapp_type == 0) {
 			try {
 				fileReceiveDlg.setName(new String(data, "UTF-8"));
+				return true;
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
+				return false;
 			}
+			
 		}
 		// 이외에 데이터 프레임
 		else {
 			file_fragments_buffer.add(new FileFrame(data, ith_frame));
 			fileReceiveDlg.AddIndex();
+			fileReceiveDlg.AdjustProgressiveBar(Math.round(((float) ith_frame / ((total_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
+			System.out.println(fileReceiveDlg.GetIndex());
 		}
 
 		// 모든 프레임을 수신함
-		if (fileReceiveDlg.GetIndex() == total_length) {
+		if (fileReceiveDlg.GetIndex() == (total_length / FILE_FRAGMENTATION_CRITERIA) + 1) {
+			
 			((GUILayer) m_LayerMgr.GetLayer("GUI")).ReceiveFile(sortBytesList(file_fragments_buffer, total_length),
 					fileReceiveDlg.getName());
 
+			fileReceiveDlg.AdjustProgressiveBar(100);
 			fileReceiveDlg.QuitTransfer();
 			fileReceiveDlg = null;
 		}
@@ -297,14 +320,18 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 	private byte[] sortBytesList(List<FileFrame> byteList, int fileLength) {
 
 		byte[] result = new byte[fileLength];
-
-		for (int i = 0; i < byteList.size(); i++) {
-			for (int j = 0; j < byteList.get(i).bytes.length; j++) {
-				
-				// 아래 로직 수정 필요
-				result[j] = byteList.get(i).bytes[j];
+		
+		Collections.sort(byteList);
+		
+		for (int i =0; i < byteList.size(); i++) {
+			FileFrame frame = byteList.get(i);
+			for(int j = 0; j< frame.bytes.length; j++) {
+				result[ i * FILE_FRAGMENTATION_CRITERIA + j] = frame.bytes[j];
 			}
 		}
+		
+		System.out.println(result.length);
+		
 		return result;
 	}
 
@@ -446,7 +473,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 					for (int i = 0; i < (file_fragment_length / FILE_FRAGMENTATION_CRITERIA) + 1; i++) {
 
 						byte[] split_data = null;
-
+						
 						if (i == file_fragment_length / FILE_FRAGMENTATION_CRITERIA) {
 							split_data = new byte[file_fragment_length % FILE_FRAGMENTATION_CRITERIA + 1];
 
@@ -462,7 +489,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 							((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(split_data,
 									(file_fragment_length % FILE_FRAGMENTATION_CRITERIA) + 12, 2090);
-
+							
 							progressBar.setValue(100);
 
 						}
@@ -487,6 +514,13 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 							progressBar.setValue(Math
 									.round(((float) i / ((file_fragment_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
+							
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 
 							// notify로 들어온 값과 이번에 Send한 frame이 같은 n번째 라면 Ack를 기다리고, 아니라면 반복문을 더 돈다
 
