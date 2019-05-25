@@ -43,9 +43,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 	public Send_Thread sendingThread = null;
 
 	private static final int FILE_FRAGMENTATION_CRITERIA = 1448;
-	private static final byte[] BUFFER_INITIALIZER = new byte[0];
-
-	private List<FileFrame> file_fragments_buffer = new LinkedList();
+	private List<FileFrame> file_fragments_buffer;
 
 	private class FileFrame implements Comparable<FileFrame>{
 		private byte[] bytes;
@@ -280,6 +278,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 		if (fileReceiveDlg == null) {
 			fileReceiveDlg = new FileReceiveDlg();
+			file_fragments_buffer = new LinkedList<FileFrame>() {};
 		}
 
 		// 파일 이름 설정
@@ -297,8 +296,8 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		else {
 			file_fragments_buffer.add(new FileFrame(data, ith_frame));
 			fileReceiveDlg.AddIndex();
-			fileReceiveDlg.AdjustProgressiveBar(Math.round(((float) ith_frame / ((total_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
-			System.out.println(fileReceiveDlg.GetIndex());
+			fileReceiveDlg.AdjustProgressiveBar(Math.round(((float) fileReceiveDlg.GetIndex() / ((total_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
+			System.out.println("보낸 단편화 조각: "+ fileReceiveDlg.GetIndex());
 		}
 
 		// 모든 프레임을 수신함
@@ -306,9 +305,12 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			
 			((GUILayer) m_LayerMgr.GetLayer("GUI")).ReceiveFile(sortBytesList(file_fragments_buffer, total_length),
 					fileReceiveDlg.getName());
-
+			
+			System.out.println("모든 프레임을 수신했습니다.");
+			
 			fileReceiveDlg.AdjustProgressiveBar(100);
 			fileReceiveDlg.QuitTransfer();
+			// 전송이 끝난 fileReceiveDlg엔 이제 접근할 일이 없음. 그래서 null로 만들었다.
 			fileReceiveDlg = null;
 		}
 
@@ -326,11 +328,9 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		for (int i =0; i < byteList.size(); i++) {
 			FileFrame frame = byteList.get(i);
 			for(int j = 0; j< frame.bytes.length; j++) {
-				result[ i * FILE_FRAGMENTATION_CRITERIA + j] = frame.bytes[j];
+				result[i * FILE_FRAGMENTATION_CRITERIA + j] = frame.bytes[j];
 			}
 		}
-		
-		System.out.println(result.length);
 		
 		return result;
 	}
@@ -518,7 +518,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 							try {
 								Thread.sleep(100);
 							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 

@@ -28,6 +28,8 @@ public class FileReceiveDlg extends JFrame{
 	// Index는 받은 프레임의 갯수 (NameFrame 제외)
 	private int bufferIndex = 0;
 	
+	JLabel transferProgrssiveBarLabel;
+	
 	public void AddIndex() {
 		bufferIndex++;
 	}
@@ -54,7 +56,7 @@ public class FileReceiveDlg extends JFrame{
 		progressBar.setBounds(12, 64, 420, 23);
 		progressBar.setStringPainted(true);
 		chatting_InputPanel.add(progressBar);
-		JLabel transferProgrssiveBarLabel = new JLabel(fileName);
+		transferProgrssiveBarLabel = new JLabel(fileName);
 	
 		transferProgrssiveBarLabel.setBounds(12, 24, 420, 23);
 		chatting_InputPanel.add(transferProgrssiveBarLabel);
@@ -90,5 +92,6 @@ public class FileReceiveDlg extends JFrame{
 	
 	public void setName(String transferringFileName) {
 		fileName = transferringFileName;
+		transferProgrssiveBarLabel.setText(fileName);
 	}
 }
