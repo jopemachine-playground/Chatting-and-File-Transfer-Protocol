@@ -3,7 +3,7 @@ package fileTransfer_Simplest;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import Utility.DebuggingHelper;
+import fileTransfer_StopAndWait.ByteCaster;
 
 public class EthernetLayer implements BaseLayer {
 

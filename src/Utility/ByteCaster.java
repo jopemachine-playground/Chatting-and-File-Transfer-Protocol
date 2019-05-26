@@ -1,4 +1,4 @@
-package fileTransfer_Simplest;
+package Utility;
 
 public class ByteCaster {
 

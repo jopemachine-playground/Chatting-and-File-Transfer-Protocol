@@ -22,7 +22,7 @@ import javax.swing.JTextField;
 import javax.swing.border.BevelBorder;
 import javax.swing.filechooser.FileSystemView;
 
-import Utility.DebuggingHelper;
+import fileTransfer_StopAndWait.ByteCaster;
 
 public class FileAppLayer extends JFrame implements BaseLayer {
 
