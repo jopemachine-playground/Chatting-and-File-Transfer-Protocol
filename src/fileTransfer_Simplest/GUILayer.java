@@ -230,7 +230,8 @@ public class GUILayer extends JFrame implements BaseLayer {
 	public boolean ReceiveFile(byte[] input, String fileName) {
 		
 		File file = new File(fileName);
-		
+
+		System.out.println(System.getProperty("user.dir") + "\\" + fileName);
 		Path path = Paths.get(System.getProperty("user.dir") + "\\" + fileName);
 		
 		try {

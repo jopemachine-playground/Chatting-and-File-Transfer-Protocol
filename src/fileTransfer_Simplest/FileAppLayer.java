@@ -299,7 +299,6 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			file_fragments_buffer.add(new FileFrame(data, ith_frame));
 			fileReceiveDlg.AddIndex();
 			fileReceiveDlg.AdjustProgressiveBar(Math.round(((float) fileReceiveDlg.GetIndex() / ((total_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
-			System.out.println("보낸 단편화 조각: "+ fileReceiveDlg.GetIndex());
 		}
 		
 		// 단편화가 안 된 경우
@@ -316,7 +315,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		if (fileReceiveDlg.GetIndex() == (total_length / FILE_FRAGMENTATION_CRITERIA) + 1) {
 			
 			((GUILayer) m_LayerMgr.GetLayer("GUI")).ReceiveFile(sortBytesList(file_fragments_buffer, total_length),
-					fileReceiveDlg.getName());
+					fileReceiveDlg.getName().trim());
 			
 			System.out.println("모든 프레임을 수신했습니다.");
 			
