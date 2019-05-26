@@ -82,7 +82,7 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		byte[] fapp_totlen;
 		// 처음, 중간, 끝을 나타냄 (각각 00, 01, 02)
 		byte[] fapp_type;
-		// 0이면 nameFrame, 1이면 dataFrame, 2이면 데이터 전송 취소 프레임
+		// 0이면 nameFrame, 1이면 dataFrame
 		byte fapp_msg_type;
 		// 쓰이지 않음
 		byte ed;
@@ -273,6 +273,8 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		int fapp_type = ByteCaster.byte2ToInt(input[4], input[5]);
 
 		byte[] data = RemoveFappHeader(input, input.length);
+		
+		byte message_type = input[6];
 
 		int ith_frame = ByteCaster.byte4ToInt(new byte[] { input[8], input[9], input[10], input[11] });
 
@@ -281,23 +283,33 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 			file_fragments_buffer = new LinkedList<FileFrame>() {};
 		}
 
-		// 파일 이름 설정
-		if (fapp_type == 0) {
-			try {
+		// 파일 이름 설정, message_type이 0인 경우
+		if (message_type == 0) {
+			try {				
 				fileReceiveDlg.setName(new String(data, "UTF-8"));
 				return true;
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
 				return false;
 			}
-			
 		}
-		// 이외에 데이터 프레임
-		else {
+		
+		// 단편화된 데이터 프레임 (대부분의 경우)
+		else if((fapp_type == 2) || (fapp_type == 3) && message_type == 1){
 			file_fragments_buffer.add(new FileFrame(data, ith_frame));
 			fileReceiveDlg.AddIndex();
 			fileReceiveDlg.AdjustProgressiveBar(Math.round(((float) fileReceiveDlg.GetIndex() / ((total_length) / FILE_FRAGMENTATION_CRITERIA)) * 100));
 			System.out.println("보낸 단편화 조각: "+ fileReceiveDlg.GetIndex());
+		}
+		
+		// 단편화가 안 된 경우
+		else if(fapp_type == 0 && message_type == 1) {
+			fileReceiveDlg.AdjustProgressiveBar(100);
+			((GUILayer) m_LayerMgr.GetLayer("GUI")).ReceiveFile(data, fileReceiveDlg.getName());
+			fileReceiveDlg.QuitTransfer();
+			fileReceiveDlg = null;
+			System.out.println("단편화되지 않은 파일");
+			return true;
 		}
 
 		// 모든 프레임을 수신함
@@ -407,7 +419,10 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 	private void SendFileNameFrame(String fileName) {
 
-		_FAPP_HEADER header = Fapp_Builder.setFileTotalLength(fileName.length()).setFappType(0).setSequenceNumber(0)
+		_FAPP_HEADER header = Fapp_Builder
+				.setFileTotalLength(fileName.length())
+				.setFappType(-1)
+				.setSequenceNumber(0)
 				.setMsgType((byte) 0).build();
 
 		byte[] data = null;
@@ -459,8 +474,12 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 				if (file_fragment_length < FILE_FRAGMENTATION_CRITERIA) {
 
 					// 단편화 하지 않음
-					header[0] = Fapp_Builder.setFileTotalLength(file_fragment_length).setFappType(2)
-							.setSequenceNumber(1).setMsgType((byte) 1).build();
+					header[0] = Fapp_Builder
+							.setFileTotalLength(file_fragment_length)
+							.setFappType(0)
+							.setSequenceNumber(1)
+							.setMsgType((byte) 1)
+							.build();
 
 					byte[] data = ObjToByte(header[0], input, file_fragment_length);
 
@@ -481,8 +500,12 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 								split_data[j] = input[FILE_FRAGMENTATION_CRITERIA * i + j];
 							}
 
-							header[i] = Fapp_Builder.setFileTotalLength(file_fragment_length).setFappType(2)
-									.setSequenceNumber(i + 1).setMsgType((byte) 1).build();
+							header[i] = Fapp_Builder
+									.setFileTotalLength(file_fragment_length)
+									.setFappType(2)
+									.setSequenceNumber(i + 1)
+									.setMsgType((byte) 1)
+									.build();
 
 							split_data = ObjToByte(header[i], split_data,
 									file_fragment_length % FILE_FRAGMENTATION_CRITERIA);
@@ -504,8 +527,12 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 							// 모든 조각을 보낼 때 까지 반복문을 돌며 헤더를 만들고, 붙여서 Send
 
-							header[i] = Fapp_Builder.setFileTotalLength(file_fragment_length).setFappType(1)
-									.setSequenceNumber(i + 1).setMsgType((byte) 1).build();
+							header[i] = Fapp_Builder
+									.setFileTotalLength(file_fragment_length)
+									.setFappType(3)
+									.setSequenceNumber(i + 1)
+									.setMsgType((byte) 1)
+									.build();
 
 							split_data = ObjToByte(header[i], split_data, FILE_FRAGMENTATION_CRITERIA);
 
