@@ -185,6 +185,9 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 		JButton cancelButton = new JButton("Cancel");
 		cancelButton.setBounds(312, 137, 120, 23);
 		chatting_InputPanel.add(cancelButton);
+		cancelButton.addActionListener( e -> {
+			this.setVisible(false);
+		});
 
 	}
 

@@ -2,7 +2,7 @@ package fileTransfer_Simplest;
 
 import javax.swing.JOptionPane;
 
-public class Main {
+public class FileTransferMain {
 
 	private static LayerManager m_LayerMgr = LayerManager.getInstance();
 	
