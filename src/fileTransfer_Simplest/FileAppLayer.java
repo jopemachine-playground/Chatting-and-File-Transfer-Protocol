@@ -487,6 +487,8 @@ public class FileAppLayer extends JFrame implements BaseLayer {
 
 					((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SendFrame(data,
 							(file_fragment_length % FILE_FRAGMENTATION_CRITERIA) + 12, 2090);
+					
+					progressBar.setValue(100);
 
 				}
 
