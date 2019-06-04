@@ -14,9 +14,9 @@ Java, jnetpcap, Swing 사용. 데이터 통신 과목 실습 과제. jnetpcap, w
 
 # Screen shot
 
-![Alt Text](https://github.com/jopemachine/Data_Communication/blob/master/screenshot1.png)
+![Alt Text](https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot1.png)
 
-![Alt Text](https://github.com/jopemachine/Data_Communication/blob/master/screenshot2.png)
+![Alt Text](https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot2.png)
 
-![Alt Text](https://github.com/jopemachine/Data_Communication/blob/master/screenshot3.png)
+![Alt Text](https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot3.png)
 
