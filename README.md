@@ -1,4 +1,4 @@
-# Data_Communicaton_Project
+# Chatting and File Transfer Protocol 
 
 ◈ Homework #5
 To implement the Chatting and File transfer client
