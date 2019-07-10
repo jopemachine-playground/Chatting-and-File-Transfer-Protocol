@@ -1,4 +1,4 @@
-# Chatting and File Transfer Protocol 
+<h2>Chatting and File Transfer Protocol</h2>
 
 ◈ Homework #5
 To implement the Chatting and File transfer client
@@ -9,11 +9,11 @@ To implement the Chatting and File transfer client
 Chatting과 File 전송을 동시에 할 수 있는 Application 구현
 
 
-# Development Environment
+<h2>Development Environment</h2>
 ```
 Java, jnetpcap, Swing 사용. 데이터 통신 과목 실습 과제. jnetpcap, winpcap을 설치해야 작동한다.
 ```
-# Screen shot
+<h2>Screen shot</h2>
 
 ![Alt Text](https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot1.png)
 
@@ -23,7 +23,7 @@ Java, jnetpcap, Swing 사용. 데이터 통신 과목 실습 과제. jnetpcap, w
 
 
 
-# Part of Report
+<h2>Part of Report</h2>
 
 byte들의 전송으로, 파일을 전송할 수 있는 프로토콜을 만든다. 파일 전송 프로토콜은 채팅 프레임 전송 프레임과 별도로,
 동시에 전송될 수 있어야 한다.
