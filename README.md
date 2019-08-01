@@ -1,4 +1,4 @@
-<h2>Chatting and File Transfer Protocol</h2>
+<h2>Outline</h2>
 
 ◈ Homework #5
 To implement the Chatting and File transfer client
@@ -16,12 +16,15 @@ Java, jnetpcap, Swing 사용. 데이터 통신 과목 실습 과제. jnetpcap, w
 ```
 <h2>Screen shot</h2>
 
-![Alt Text](https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot1.png)
-
-![Alt Text](https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot2.png)
-
-![Alt Text](https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot3.png)
-
+<p align="center">
+   <img src="https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot1.png">
+</p>
+<p align="center">
+   <img src="https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot2.png">
+</p>
+<p align="center">
+   <img src="https://github.com/jopemachine/Chatting-and-File-Transfer-Protocol/blob/master/screenshot3.png">
+</p>
 
 
 <h2>Part of Report</h2>
